@@ -14,11 +14,21 @@ exports.handler = async function (event) {
 
       // ── Create a new room ──────────────────────────────
       case 'create_room': {
-        // Generate code via RPC
-        const codeRes = await sb('POST', '/rpc/generate_room_code', {});
-        const code = typeof codeRes === 'string' ? codeRes : (codeRes && codeRes.generate_room_code) ? codeRes.generate_room_code : Math.random().toString(36).slice(2,8).toUpperCase();
+          // Generate a unique 6-char code without relying on RPC
+        let code = '';
+        let attempts = 0;
+        while (!code && attempts < 10) {
+          attempts++;
+          const candidate = Math.random().toString(36).slice(2, 8).toUpperCase();
+          // Check it doesn't already exist
+          const existing = await sb('GET', `/rooms?code=eq.${candidate}&select=code`);
+          const existingArr = Array.isArray(existing) ? existing : [];
+          if (!existingArr.length) code = candidate;
+        }
+        if (!code) code = Date.now().toString(36).toUpperCase().slice(-6);
+
         // Insert room
-        const room = await sb('POST', '/rooms', {
+        const roomRes = await sb('POST', '/rooms', {
           code,
           host_id: payload.hostId,
           total_rounds: payload.totalRounds || 15,
@@ -32,7 +42,7 @@ exports.handler = async function (event) {
           avatar_color: payload.avatarColor || '#7c4dff',
           is_host: true,
         });
-        result = { code, room };
+        result = { code };
         break;
       }
 
