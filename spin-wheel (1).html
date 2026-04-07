@@ -1,0 +1,1166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SpinNight</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0e0c15;--bg2:#1a1726;--bg3:#231f33;--border:#2e2b3e;--text:#f0eeff;--muted:#8b849e;--accent:#7c4dff;--accent2:#b388ff;--pink:#ff4d8d;--teal:#00e5cc;--amber:#ffb300;--green:#00e676;--red:#ff5252;--r:14px}
+body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+.screen{display:none;min-height:100vh;flex-direction:column;align-items:center;justify-content:center;padding:1.5rem 1rem;animation:fadeIn .3s ease}
+.screen.active{display:flex}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── TYPOGRAPHY ── */
+.logo{font-size:3rem;font-weight:800;letter-spacing:-.03em;background:linear-gradient(135deg,var(--accent2),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:.25rem}
+.tagline{font-size:.95rem;color:var(--muted);margin-bottom:2.5rem;text-align:center}
+
+/* ── BUTTONS ── */
+.btn{padding:.5rem 1rem;border:1px solid var(--border);background:var(--bg2);color:var(--text);border-radius:10px;font-size:.85rem;cursor:pointer;transition:all .15s;white-space:nowrap}
+.btn:hover{background:var(--bg3);border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600}
+.btn.primary:hover{background:var(--accent2);border-color:var(--accent2)}
+.btn.primary:disabled{background:var(--bg3);color:var(--muted);border-color:var(--border);cursor:not-allowed}
+.btn.ghost{background:none;border-color:transparent;color:var(--muted)}
+.btn.ghost:hover{color:var(--text);background:var(--bg3);border-color:var(--border)}
+.btn.lg{padding:.75rem 2.2rem;font-size:1rem;font-weight:700;border-radius:999px;box-shadow:0 4px 20px rgba(124,77,255,.35)}
+.btn.lg:hover{transform:translateY(-1px);box-shadow:0 6px 28px rgba(124,77,255,.45)}
+.btn.sm{padding:.3rem .65rem;font-size:.76rem}
+.btn.danger{border-color:var(--red);color:var(--red)}
+.btn.danger:hover{background:rgba(255,82,82,.1)}
+
+/* ── CARDS ── */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:1.4rem}
+.mode-card{flex:1;min-width:200px;max-width:280px;padding:1.6rem;border:2px solid var(--border);background:var(--bg2);border-radius:20px;cursor:pointer;text-align:center;transition:all .2s;color:var(--text)}
+.mode-card:hover{border-color:var(--accent);transform:translateY(-3px);box-shadow:0 8px 32px rgba(124,77,255,.2)}
+.mode-card .mc-icon{font-size:2.8rem;margin-bottom:.6rem}
+.mode-card .mc-title{font-size:1.1rem;font-weight:700;margin-bottom:.3rem}
+.mode-card .mc-sub{font-size:.8rem;color:var(--muted);line-height:1.5}
+.mode-card .mc-tags{display:flex;gap:.3rem;flex-wrap:wrap;justify-content:center;margin-top:.7rem}
+.tag{display:inline-block;padding:.18rem .55rem;border-radius:6px;font-size:.7rem;font-weight:600;background:var(--bg3);color:var(--muted)}
+
+/* ── INPUTS ── */
+.inp{padding:.5rem .8rem;background:var(--bg);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:.88rem;outline:none;width:100%}
+.inp:focus{border-color:var(--accent)}
+.inp-row{display:flex;gap:.4rem}
+
+/* ── SETUP ── */
+.setup-card{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:2rem;width:100%;max-width:420px;display:flex;flex-direction:column;gap:1.1rem}
+.setup-title{font-size:1.2rem;font-weight:700;text-align:center}
+.mode-row{display:flex;gap:.6rem}
+.mode-pill{flex:1;padding:.9rem;border:2px solid var(--border);background:var(--bg3);border-radius:var(--r);cursor:pointer;text-align:center;transition:all .2s;color:var(--text)}
+.mode-pill:hover{border-color:var(--accent)}
+.mode-pill.active{border-color:var(--accent);background:rgba(124,77,255,.15)}
+.mode-pill .mp-icon{font-size:1.6rem;display:block;margin-bottom:.25rem}
+.mode-pill .mp-label{font-size:.83rem;font-weight:600}
+.mode-pill .mp-sub{font-size:.7rem;color:var(--muted)}
+.players-list{display:flex;flex-direction:column;gap:.35rem;max-height:170px;overflow-y:auto}
+.player-row{display:flex;align-items:center;gap:.5rem;background:var(--bg3);border-radius:10px;padding:.38rem .6rem}
+.avatar{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;flex-shrink:0}
+.stepper{display:flex;align-items:center;gap:.5rem}
+.step-btn{width:30px;height:30px;border:1px solid var(--border);background:var(--bg3);border-radius:8px;color:var(--text);font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.step-btn:hover{border-color:var(--accent)}
+
+/* ── PARTY ── */
+.party-wrap{width:100%;max-width:520px;display:flex;flex-direction:column;gap:1rem}
+.progress-bar-wrap{background:var(--bg3);border-radius:999px;height:5px;overflow:hidden}
+.progress-bar{height:100%;background:linear-gradient(90deg,var(--accent),var(--pink));border-radius:999px;transition:width .5s ease}
+.round-info{font-size:.76rem;color:var(--muted);display:flex;justify-content:space-between;margin-bottom:.3rem}
+.host-bubble{background:var(--bg2);border:1px solid var(--border);border-radius:18px 18px 18px 4px;padding:.9rem 1.1rem}
+.host-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--pink));display:flex;align-items:center;justify-content:center;font-size:1rem;margin-bottom:.35rem}
+.host-text{font-size:.9rem;line-height:1.5}
+.game-card{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:1.3rem;display:flex;flex-direction:column;gap:.9rem}
+.game-badge{display:inline-flex;align-items:center;gap:.4rem;padding:.28rem .75rem;border-radius:999px;font-size:.75rem;font-weight:600}
+.q-box{background:var(--bg3);border-radius:12px;padding:1.2rem;text-align:center;min-height:75px;display:flex;align-items:center;justify-content:center}
+.q-text{font-size:1.05rem;font-weight:500;line-height:1.55}
+.action-row{display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center}
+
+/* ── WHEEL ── */
+.wheel-section{display:flex;flex-direction:column;align-items:center;gap:.65rem}
+.wheel-wrap{position:relative}
+.wheel-wrap canvas{display:block;border-radius:50%}
+.w-pointer{position:absolute;top:-7px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:10px solid transparent;border-right:10px solid transparent;border-top:22px solid var(--text);z-index:5}
+.winner-text{font-size:1rem;font-weight:700;color:var(--accent2);min-height:1.3rem;text-align:center}
+
+/* ── FREE PLAY ── */
+.fp-wrap{width:100%;max-width:600px}
+.fp-header{display:flex;align-items:center;gap:.75rem;margin-bottom:1rem;flex-wrap:wrap}
+.fp-header h2{font-size:1.2rem;font-weight:700;flex:1}
+.fp-tabs{display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:1.2rem;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:.4rem}
+.fp-tab{padding:.38rem .8rem;border-radius:8px;font-size:.8rem;cursor:pointer;border:none;background:none;color:var(--muted);transition:all .15s;white-space:nowrap}
+.fp-tab:hover{color:var(--text)}
+.fp-tab.active{background:var(--accent);color:#fff;font-weight:600}
+.fp-page{display:none}
+.fp-page.active{display:block}
+
+/* AI toggle */
+.ai-toggle-wrap{display:flex;align-items:center;gap:.6rem;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:.5rem .8rem;margin-bottom:.8rem;flex-wrap:wrap}
+.ai-toggle-label{font-size:.78rem;color:var(--muted);margin-right:.2rem}
+.toggle-opt{padding:.28rem .7rem;border-radius:7px;font-size:.76rem;cursor:pointer;border:1px solid transparent;transition:all .15s;color:var(--muted)}
+.toggle-opt.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.toggle-opt:hover:not(.active){color:var(--text);border-color:var(--border)}
+.ai-status{font-size:.72rem;margin-left:auto;padding:.2rem .5rem;border-radius:5px}
+.ai-status.ok{background:rgba(0,230,118,.1);color:var(--green)}
+.ai-status.off{background:var(--bg3);color:var(--muted)}
+
+/* Timer */
+.timer-wrap{display:flex;flex-direction:column;align-items:center;gap:.35rem}
+.timer-num{font-size:2.4rem;font-weight:800;color:var(--accent2)}
+.tbar-bg{width:100%;height:6px;background:var(--bg3);border-radius:3px;overflow:hidden}
+.tbar{height:100%;background:var(--accent);border-radius:3px;transition:width .1s linear,background .4s}
+
+/* Lives */
+.lives-row{display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap}
+.life-badge{display:flex;flex-direction:column;align-items:center;gap:.15rem;font-size:.72rem;color:var(--muted)}
+.hearts{font-size:.95rem;letter-spacing:1px}
+
+/* Vote */
+.vote-grid{display:flex;flex-wrap:wrap;gap:.45rem;justify-content:center}
+.vote-card{padding:.5rem .95rem;border:2px solid var(--border);background:var(--bg3);border-radius:10px;font-size:.85rem;cursor:pointer;transition:all .2s;user-select:none}
+.vote-card:hover{border-color:var(--accent2)}
+.vote-card.sel{border-color:var(--accent);background:rgba(124,77,255,.2);color:var(--accent2);font-weight:600}
+
+/* WYR */
+.wyr-opts{display:flex;gap:.55rem}
+.wyr-opt{flex:1;padding:.75rem;border:2px solid var(--border);background:var(--bg3);border-radius:12px;text-align:center;font-size:.85rem;cursor:pointer;transition:all .2s;line-height:1.4}
+.wyr-opt:hover{border-color:var(--accent2)}
+.wyr-opt.sel-a{border-color:var(--accent);background:rgba(124,77,255,.2);color:var(--accent2)}
+.wyr-opt.sel-b{border-color:var(--pink);background:rgba(255,77,141,.15);color:var(--pink)}
+
+/* Score bar */
+.score-bar-row{display:flex;align-items:center;gap:.55rem;font-size:.82rem;margin-bottom:.32rem}
+.sbar-bg{flex:1;height:6px;background:var(--bg3);border-radius:3px;overflow:hidden}
+.sbar-fill{height:100%;border-radius:3px;transition:width .6s ease}
+.score-name{min-width:72px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.score-pts{min-width:26px;text-align:right;color:var(--muted);font-size:.76rem}
+
+/* Spin wheel custom */
+.items-wrap{max-height:200px;overflow-y:auto}
+.items-wrap::-webkit-scrollbar{width:4px}
+.items-wrap::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+ul.ilist{list-style:none;display:flex;flex-direction:column;gap:.28rem}
+ul.ilist li{display:flex;align-items:center;gap:.38rem;background:var(--bg3);border-radius:8px;padding:.32rem .55rem;font-size:.83rem}
+.dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;cursor:pointer}
+.iname{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
+.iname:hover{color:var(--accent2)}
+.wb{font-size:.68rem;background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:1px 4px;color:var(--muted);cursor:pointer}
+.wb:hover{border-color:var(--accent)}
+button.del{background:none;border:none;color:var(--muted);font-size:.8rem;cursor:pointer;padding:0 2px}
+button.del:hover{color:var(--red)}
+
+/* Diff / subj pills */
+.pill-row{display:flex;gap:.35rem;flex-wrap:wrap;margin-bottom:.55rem}
+.pill{padding:.26rem .65rem;border:1px solid var(--border);background:var(--bg3);color:var(--muted);border-radius:999px;font-size:.75rem;cursor:pointer;transition:all .15s}
+.pill:hover{border-color:var(--accent2);color:var(--text)}
+.pill.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+/* Trivia cats */
+.cat-grid{display:flex;gap:.35rem;flex-wrap:wrap;margin-bottom:.8rem}
+.cat-btn{padding:.32rem .72rem;border:1px solid var(--border);background:var(--bg2);color:var(--text);border-radius:8px;font-size:.78rem;cursor:pointer;transition:all .15s}
+.cat-btn:hover{border-color:var(--accent);color:var(--accent2)}
+.cat-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+/* Answer */
+.answer-box{background:var(--bg3);border-radius:10px;padding:.75rem;text-align:center;display:none;margin-top:.5rem}
+.answer-box.show{display:block}
+.answer-val{font-size:1.05rem;font-weight:700;color:var(--green)}
+
+/* Recap */
+.recap-card{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:1.5rem;width:100%;max-width:440px}
+.recap-title{font-size:1.4rem;font-weight:800;text-align:center;margin-bottom:1.1rem;background:linear-gradient(135deg,var(--accent2),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.trophy-row{display:flex;flex-direction:column;gap:.6rem;margin-bottom:1rem}
+.trophy-item{display:flex;align-items:center;gap:.7rem;background:var(--bg3);border-radius:12px;padding:.7rem .9rem}
+.trophy-icon{font-size:1.3rem;flex-shrink:0}
+.trophy-label{font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.trophy-name{font-size:.95rem;font-weight:700}
+.trophy-detail{font-size:.75rem;color:var(--muted)}
+
+/* Loading */
+.loading{display:flex;align-items:center;gap:.5rem;color:var(--muted);font-size:.85rem;padding:.4rem 0}
+.spinner{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Color modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:200;opacity:0;pointer-events:none;transition:opacity .2s}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:1.2rem;width:240px;display:flex;flex-direction:column;gap:.75rem}
+.modal h3{font-size:.95rem;font-weight:600}
+.mrow{display:flex;align-items:center;gap:.5rem}
+.mrow input[type=color]{width:34px;height:26px;border:1px solid var(--border);border-radius:6px;cursor:pointer;background:none;padding:1px}
+.mrow input[type=text]{flex:1;padding:.32rem .55rem;background:var(--bg);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:.83rem;outline:none}
+.mrow input[type=text]:focus{border-color:var(--accent)}
+
+/* Confetti */
+#cf{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:999}
+
+/* Preset packs */
+.pack-grid{display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:.6rem}
+.pack-btn{padding:.3rem .65rem;border:1px solid var(--border);background:var(--bg3);color:var(--muted);border-radius:8px;font-size:.76rem;cursor:pointer;transition:all .15s}
+.pack-btn:hover{border-color:var(--accent2);color:var(--text)}
+
+/* Saved lists */
+.list-mgr{display:flex;gap:.35rem;flex-wrap:wrap;align-items:center}
+.list-mgr select{flex:1;min-width:0;padding:.38rem .5rem;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:.8rem;outline:none}
+textarea.ta{width:100%;padding:.45rem .65rem;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:.82rem;resize:vertical;outline:none;min-height:46px;margin-top:.4rem}
+textarea.ta:focus{border-color:var(--accent)}
+</style>
+</head>
+<body>
+<canvas id="cf"></canvas>
+
+<!-- ══ HOME ══ -->
+<div class="screen active" id="s-home">
+  <div class="logo">SpinNight</div>
+  <div class="tagline">Your pocket party host ✨</div>
+  <div style="display:flex;gap:1rem;flex-wrap:wrap;justify-content:center;max-width:600px">
+    <div class="mode-card" id="partyModeBtn">
+      <div class="mc-icon">🎉</div>
+      <div class="mc-title">Party Mode</div>
+      <div class="mc-sub">Fully hosted experience with auto game selection, scoring, and a recap at the end.</div>
+      <div class="mc-tags">
+        <span class="tag">🏆 Scores</span><span class="tag">🎙 Host</span><span class="tag">15 Rounds</span>
+      </div>
+    </div>
+    <div class="mode-card" id="freeModeBtn">
+      <div class="mc-icon">🎡</div>
+      <div class="mc-title">Free Play</div>
+      <div class="mc-sub">Pick any game, spin the wheel with custom options, play at your own pace.</div>
+      <div class="mc-tags">
+        <span class="tag">🎡 Custom Wheel</span><span class="tag">🤔 WYR</span><span class="tag">🙈 NHIE</span><span class="tag">🧠 Trivia</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SETUP ══ -->
+<div class="screen" id="s-setup">
+  <div class="setup-card">
+    <div class="setup-title">Set up your party 🎊</div>
+    <div>
+      <div style="font-size:.72rem;color:var(--muted);margin-bottom:.45rem;text-transform:uppercase;letter-spacing:.06em">Who's playing?</div>
+      <div class="mode-row">
+        <div class="mode-pill active" data-mode="duo"><span class="mp-icon">💑</span><span class="mp-label">Just Us Two</span><br><span class="mp-sub">Date / duo</span></div>
+        <div class="mode-pill" data-mode="group"><span class="mp-icon">👥</span><span class="mp-label">Group Mode</span><br><span class="mp-sub">3+ players</span></div>
+      </div>
+    </div>
+    <div>
+      <div style="font-size:.72rem;color:var(--muted);margin-bottom:.45rem;text-transform:uppercase;letter-spacing:.06em">Player names</div>
+      <div class="inp-row" style="margin-bottom:.4rem"><input class="inp" id="pInp" placeholder="Enter name…"/><button class="btn primary" id="addPBtn">+</button></div>
+      <div class="players-list" id="pList"></div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <span style="font-size:.85rem;color:var(--muted)">Rounds</span>
+      <div class="stepper">
+        <button class="step-btn" id="rDown">−</button>
+        <span style="font-size:1.05rem;font-weight:700;color:var(--accent2);min-width:30px;text-align:center" id="rVal">15</span>
+        <button class="step-btn" id="rUp">+</button>
+      </div>
+    </div>
+    <button class="btn primary lg" style="margin-top:.2rem" id="letsGoBtn">Let's Go! 🚀</button>
+    <button class="btn ghost" id="setupBackBtn">← Back</button>
+  </div>
+</div>
+
+<!-- ══ PARTY ══ -->
+<div class="screen" id="s-party">
+  <div class="party-wrap">
+    <div>
+      <div class="round-info"><span id="roundLbl">Round 1 of 15</span><span id="roundGame"></span></div>
+      <div class="progress-bar-wrap"><div class="progress-bar" id="pBar" style="width:0%"></div></div>
+    </div>
+    <div class="host-bubble"><div class="host-avatar">🎙</div><div class="host-text" id="hostTxt">Get ready…</div></div>
+    <div class="game-card" id="gameCard"></div>
+    <div class="action-row">
+      <button class="btn primary" id="nextRndBtn" style="display:none">Next Round →</button>
+      <button class="btn ghost" id="skipRndBtn">Skip</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ RECAP ══ -->
+<div class="screen" id="s-recap">
+  <div class="recap-card">
+    <div class="recap-title">Party's Over! 🎉</div>
+    <div class="trophy-row" id="trophyRow"></div>
+    <hr style="border:none;border-top:1px solid var(--border);margin:.5rem 0">
+    <div style="font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.5rem;margin-top:.5rem">Final Scores</div>
+    <div id="finalScores"></div>
+    <button class="btn primary lg" style="width:100%;margin-top:1.1rem" id="playAgainBtn">Play Again 🔄</button>
+  </div>
+</div>
+
+<!-- ══ FREE PLAY ══ -->
+<div class="screen" id="s-free" style="justify-content:flex-start;padding-top:1.2rem">
+  <div class="fp-wrap">
+    <div class="fp-header">
+      <button class="btn ghost btn-sm" id="fpBackBtn">← Home</button>
+      <h2>🎡 Free Play</h2>
+      <!-- AI Toggle -->
+      <div class="ai-toggle-wrap" style="margin:0;flex-shrink:0">
+        <span class="ai-toggle-label">Questions:</span>
+        <span class="toggle-opt active" id="togPreload" title="Use built-in questions">📦 Preloaded</span>
+        <span class="toggle-opt" id="togAI" title="Use Claude AI (requires deployment)">✨ AI</span>
+        <span class="ai-status off" id="aiStatus">offline</span>
+      </div>
+    </div>
+    <div class="fp-tabs">
+      <button class="fp-tab active" data-fp="wheel">🎡 Spin Wheel</button>
+      <button class="fp-tab" data-fp="wyr">🤔 Would You Rather</button>
+      <button class="fp-tab" data-fp="nhie">🙈 Never Have I Ever</button>
+      <button class="fp-tab" data-fp="trivia">🧠 Trivia</button>
+      <button class="fp-tab" data-fp="mlt">😂 Most Likely To</button>
+    </div>
+
+    <!-- SPIN WHEEL -->
+    <div class="fp-page active" id="fp-wheel">
+      <div style="display:flex;flex-wrap:wrap;gap:1.2rem;justify-content:center">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:.7rem">
+          <div class="wheel-wrap" style="width:300px;height:300px">
+            <div class="w-pointer"></div>
+            <canvas id="swC" width="300" height="300"></canvas>
+          </div>
+          <button class="btn primary lg" id="swSpinBtn">Spin!</button>
+          <div class="winner-text" id="swWinner"></div>
+          <!-- History & options -->
+          <div class="card" style="width:300px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
+              <span style="font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Options</span>
+            </div>
+            <div style="display:flex;gap:.6rem;flex-wrap:wrap">
+              <label style="font-size:.8rem;display:flex;align-items:center;gap:.3rem;cursor:pointer"><input type="checkbox" id="swRemove" style="accent-color:var(--accent)"> Remove after pick</label>
+              <label style="font-size:.8rem;display:flex;align-items:center;gap:.3rem;cursor:pointer"><input type="checkbox" id="swCountdown" checked style="accent-color:var(--accent)"> Countdown</label>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin:0.7rem 0 0.4rem">
+              <span style="font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">History</span>
+              <button class="btn sm ghost" id="swClearHist">Clear</button>
+            </div>
+            <div id="swHistList" style="display:flex;flex-direction:column;gap:.22rem;max-height:100px;overflow-y:auto"><div style="font-size:.8rem;color:var(--muted);text-align:center;padding:.4rem">No spins yet</div></div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:.8rem;width:260px">
+          <div class="card">
+            <div style="font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.5rem">Starter Packs</div>
+            <div class="pack-grid">
+              <button class="pack-btn" data-pack="movies">🎬 Movies</button>
+              <button class="pack-btn" data-pack="restaurants">🍽 Restaurants</button>
+              <button class="pack-btn" data-pack="games">🎮 Games</button>
+              <button class="pack-btn" data-pack="travel">✈️ Travel</button>
+            </div>
+            <div style="font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.5rem;margin-top:.6rem">Add item</div>
+            <div class="inp-row"><input class="inp" id="swInp" placeholder="Add item…"/><button class="btn primary" id="swAddBtn">+</button></div>
+            <textarea class="ta" id="swImportTa" placeholder="Paste comma-separated items & Import"></textarea>
+            <button class="btn" style="width:100%;margin-top:.3rem;font-size:.78rem" id="swImportBtn">Import</button>
+          </div>
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.4rem">
+              <span style="font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Items <span id="swCnt" style="color:var(--accent2)"></span></span>
+              <button class="btn sm ghost" id="swClearAll">Clear</button>
+            </div>
+            <div class="items-wrap"><ul class="ilist" id="swList"></ul></div>
+            <p style="font-size:.7rem;color:var(--muted);margin-top:.4rem">Click name to edit · dot to recolor · badge for weight</p>
+          </div>
+          <div class="card">
+            <div style="font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.5rem">Saved Lists</div>
+            <div class="list-mgr">
+              <select id="swSavedSel"><option value="">— select —</option></select>
+              <button class="btn sm" id="swLoadList">Load</button>
+              <button class="btn sm ghost" id="swDelList">Del</button>
+            </div>
+            <div class="inp-row" style="margin-top:.4rem">
+              <input class="inp" id="swSaveName" placeholder="List name…"/>
+              <button class="btn primary sm" id="swSaveList">Save</button>
+            </div>
+          </div>
+          <div style="display:flex;gap:.4rem;flex-wrap:wrap">
+            <button class="btn sm" id="swShare">🔗 Share</button>
+            <button class="btn sm" id="swExport">⬇️ Export</button>
+            <button class="btn sm" id="swScreenshot">📷 Screenshot</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- WYR FREE -->
+    <div class="fp-page" id="fp-wyr">
+      <div class="card" style="max-width:560px;margin:0 auto">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.7rem;flex-wrap:wrap;gap:.4rem">
+          <span class="game-badge" style="background:rgba(124,77,255,.2);color:var(--accent2)">🤔 Would You Rather</span>
+          <button class="btn sm primary" id="fpWyrNew">✨ New Question</button>
+        </div>
+        <div style="font-size:.72rem;color:var(--muted);margin-bottom:.35rem;text-transform:uppercase;letter-spacing:.06em">Category</div>
+        <div class="pill-row" id="fpWyrCats"></div>
+        <div id="fpWyrLoading" style="display:none" class="loading"><div class="spinner"></div>Generating…</div>
+        <div class="q-box" id="fpWyrBox"><span class="q-text" style="color:var(--muted)">Pick a category and click New Question!</span></div>
+        <div class="wyr-opts" id="fpWyrOpts" style="margin-top:.6rem;display:none"></div>
+        <div id="fpWyrResult" style="display:none;text-align:center;margin-top:.5rem;font-size:.85rem;color:var(--accent2)"></div>
+      </div>
+    </div>
+
+    <!-- NHIE FREE -->
+    <div class="fp-page" id="fp-nhie">
+      <div class="card" style="max-width:560px;margin:0 auto">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.7rem;flex-wrap:wrap;gap:.4rem">
+          <span class="game-badge" style="background:rgba(255,77,141,.15);color:var(--pink)">🙈 Never Have I Ever</span>
+          <button class="btn sm primary" id="fpNhieNew">✨ New Statement</button>
+        </div>
+        <div style="font-size:.72rem;color:var(--muted);margin-bottom:.3rem;text-transform:uppercase;letter-spacing:.06em">Difficulty</div>
+        <div class="pill-row" id="fpNhieDiff"></div>
+        <div style="font-size:.72rem;color:var(--muted);margin-bottom:.3rem;text-transform:uppercase;letter-spacing:.06em">Subject</div>
+        <div class="pill-row" id="fpNhieSubj"></div>
+        <div id="fpNhieLoading" style="display:none" class="loading"><div class="spinner"></div>Generating…</div>
+        <div class="q-box" id="fpNhieBox"><span class="q-text" style="color:var(--muted)">Select options and tap New Statement!</span></div>
+        <div style="font-size:.8rem;color:var(--muted);text-align:center;margin-top:.4rem">Everyone who HAS done it raises their hand!</div>
+      </div>
+    </div>
+
+    <!-- TRIVIA FREE -->
+    <div class="fp-page" id="fp-trivia">
+      <div class="card" style="max-width:560px;margin:0 auto">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.7rem;flex-wrap:wrap;gap:.4rem">
+          <span class="game-badge" style="background:rgba(0,229,204,.15);color:var(--teal)">🧠 Trivia</span>
+          <button class="btn sm primary" id="fpTriviaNew">✨ New Question</button>
+        </div>
+        <div style="font-size:.72rem;color:var(--muted);margin-bottom:.35rem;text-transform:uppercase;letter-spacing:.06em">Category</div>
+        <div class="cat-grid" id="fpTriviaCats"></div>
+        <div style="font-size:.72rem;color:var(--muted);margin-bottom:.35rem;text-transform:uppercase;letter-spacing:.06em">Timer</div>
+        <div class="pill-row" id="fpTriviaTimers"></div>
+        <div id="fpTriviaLoading" style="display:none" class="loading"><div class="spinner"></div>Generating…</div>
+        <div class="q-box" id="fpTriviaBox"><span class="q-text" style="color:var(--muted)">Pick a category and start!</span></div>
+        <div class="timer-wrap" id="fpTimerWrap" style="display:none;margin-top:.5rem">
+          <div class="timer-num" id="fpTNum">30</div>
+          <div class="tbar-bg" style="max-width:320px;width:100%"><div class="tbar" id="fpTBar"></div></div>
+          <button class="btn sm ghost" id="fpTStop">Stop timer</button>
+        </div>
+        <div class="answer-box" id="fpTriviaAns"><div style="font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.3rem">Answer</div><div class="answer-val" id="fpTriviaAnsVal"></div></div>
+        <div style="display:flex;gap:.5rem;justify-content:center;margin-top:.6rem;flex-wrap:wrap">
+          <button class="btn" id="fpRevealBtn" style="display:none">👁 Reveal Answer</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MLT FREE -->
+    <div class="fp-page" id="fp-mlt">
+      <div class="card" style="max-width:560px;margin:0 auto">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.7rem;flex-wrap:wrap;gap:.4rem">
+          <span class="game-badge" style="background:rgba(255,179,0,.15);color:var(--amber)">😂 Most Likely To</span>
+          <button class="btn sm primary" id="fpMltNew">✨ New Prompt</button>
+        </div>
+        <div style="font-size:.72rem;color:var(--muted);margin-bottom:.35rem;text-transform:uppercase;letter-spacing:.06em">Players (optional for voting)</div>
+        <div class="inp-row" style="margin-bottom:.4rem"><input class="inp" id="fpMltPInp" placeholder="Add player…"/><button class="btn primary" id="fpMltAddP">+</button></div>
+        <div id="fpMltPTags" style="display:flex;gap:.3rem;flex-wrap:wrap;margin-bottom:.5rem"></div>
+        <div id="fpMltLoading" style="display:none" class="loading"><div class="spinner"></div>Generating…</div>
+        <div class="q-box" id="fpMltBox"><span class="q-text" style="color:var(--muted)">Add players and tap New Prompt!</span></div>
+        <div id="fpMltVote" style="display:none;margin-top:.6rem">
+          <div style="font-size:.8rem;color:var(--muted);text-align:center;margin-bottom:.5rem">Who is most likely to…?</div>
+          <div class="vote-grid" id="fpMltVoteGrid"></div>
+          <div style="text-align:center;margin-top:.6rem"><button class="btn primary" id="fpMltReveal">Reveal Results</button></div>
+          <div id="fpMltResults" style="display:none;margin-top:.7rem"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Color Modal -->
+<div class="modal-overlay" id="colorModal">
+  <div class="modal">
+    <h3>Change color</h3>
+    <div class="mrow"><input type="color" id="colorPicker"/><input type="text" id="colorHex" maxlength="7" placeholder="#7c4dff"/></div>
+    <div style="display:flex;gap:.4rem;justify-content:flex-end">
+      <button class="btn" id="colorCancel">Cancel</button>
+      <button class="btn primary" id="colorOk">Apply</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════════════════
+var DC=['#7c4dff','#ff4d8d','#00e5cc','#ffb300','#00e676','#ff7043','#29b6f6','#ab47bc','#ec407a','#26c6da'];
+var AC=['#7c4dff','#ff4d8d','#00e5cc','#ffb300','#00e676','#ff7043','#29b6f6','#ab47bc'];
+
+var PACKS={
+  movies:['Inception','The Dark Knight','Interstellar','Parasite','Dune','Everything Everywhere','Oppenheimer','The Matrix','Pulp Fiction','Forrest Gump'],
+  restaurants:['Italian','Sushi','Burgers','Thai','Mexican','Indian','Pizza','Chinese','Korean BBQ','Mediterranean'],
+  games:['Monopoly','Catan','UNO','Chess','Jenga','Pictionary','Scrabble','Among Us','Codenames','Taboo'],
+  travel:['Paris','Tokyo','Bali','New York','Cape Town','Sydney','Santorini','Maldives','Morocco','Iceland']
+};
+
+var DATA={
+wyr:["Would you rather always have to speak in rhymes OR always have to sing everything you say?","Would you rather have the ability to fly but only 3 feet off the ground OR teleport but only to places you've been?","Would you rather eat your favorite food for every meal forever OR never eat it again but try one new amazing dish daily?","Would you rather know when you're going to die OR know how you're going to die?","Would you rather be famous for something embarrassing OR unknown despite doing something incredible?","Would you rather have a pause button for life OR a rewind button?","Would you rather always say what you're thinking OR never speak again?","Would you rather live in a world with no music OR no movies?","Would you rather talk to animals OR speak every human language?","Would you rather always be 10 minutes late OR 2 hours early?","Would you rather have free first-class flights OR free five-star hotels everywhere?","Would you rather read minds but only hear boring thoughts OR feel everyone's emotions but hear no thoughts?","Would you rather give up your phone for a month OR your bed for a month?","Would you rather be stranded alone OR with someone you hate?","Would you rather have unlimited money but no friends OR great friends but always broke?","Would you rather be incredibly attractive but unintelligent OR highly intelligent but unattractive?","Would you rather live in the past OR live in the future?","Would you rather see 10 minutes into the future OR 10 years?","Would you rather lose all past memories OR never make new ones?","Would you rather stop time OR turn back time?","Would you rather have a photographic memory OR forget anything on demand?","Would you rather always be overdressed OR underdressed?","Would you rather control fire OR control water?","Would you rather have super strength OR super speed?","Would you rather fight one horse-sized duck OR 100 duck-sized horses?","Would you rather be invisible but mute OR visible but inaudible?","Would you rather travel the world for a year with no money OR stay home a year with unlimited money?","Would you rather always have the perfect comeback OR never feel the need to have one?","Would you rather always whisper OR always shout?","Would you rather be the smartest in a room of average people OR the dumbest in a room of geniuses?","Would you rather have a job you love that pays poorly OR hate that pays incredibly well?","Would you rather be immortal watching everyone you love die OR live a normal happy lifespan?","Would you rather always feel slightly too hot OR slightly too cold?","Would you rather have no internet for a year OR no social media forever?","Would you rather breathe underwater OR fly through the air?","Would you rather know every language OR play every instrument?","Would you rather have the world's best personal chef OR personal masseuse on call?","Would you rather see in the dark OR hear from a mile away?","Would you rather be trapped in a horror movie OR a soap opera?","Would you rather live without coffee/tea forever OR without alcohol forever?","Would you rather go back to age 10 with current knowledge OR skip forward 10 years?","Would you rather have everyone know your secrets OR know everyone else's secrets?","Would you rather be the world's best singer OR best athlete?","Would you rather eat a spider daily OR never eat anything sweet again?","Would you rather hear any nearby conversation OR see through walls?","Would you rather have the wisdom of a 90-year-old at 20 OR the energy of a 20-year-old at 90?","Would you rather have a dragon OR be a dragon?","Would you rather only text and never call OR only call and never text?","Would you rather meet your great-great-grandparents OR your great-great-grandchildren?","Would you rather be an Olympic gold medalist OR a Nobel Prize winner?","Would you rather only eat spicy food OR only bland food forever?","Would you rather live in a giant city with no nature OR in nature with no city within 100 miles?","Would you rather always have wifi but no battery OR battery but no wifi?","Would you rather heal others but not yourself OR heal yourself but not others?","Would you rather have a clone of yourself OR be a clone of someone you admire?","Would you rather have legs that never tire OR arms that never tire?","Would you rather be allergic to sunlight OR to the cold?","Would you rather find true love for 1 year OR never find it but live 100 happy years?","Would you rather always have a full phone battery OR a full tank of gas?","Would you rather give up Netflix forever OR YouTube forever?","Would you rather run 100mph OR swim 50mph?","Would you rather live in a treehouse OR an underwater house?","Would you rather wear a costume to every formal event OR formal attire to every casual event?","Would you rather be the best player on a losing team OR the worst on a winning team?","Would you rather be famous after you die OR mediocre while alive?","Would you rather only read physical books OR digital?","Would you rather lose the ability to lie OR always know when someone lies to you?","Would you rather have hiccups for life OR always feel like you need to sneeze?","Would you rather have a personal chef OR a personal driver?","Would you rather talk to dogs OR cats?","Would you rather be the most popular at work OR the most respected?","Would you rather never feel physical pain OR never feel emotional pain?","Would you rather always be the funniest in the room OR the most intelligent?","Would you rather eat only pizza for a year OR only sushi for a year?","Would you rather have unlimited brain storage OR unlimited phone storage?","Would you rather live where people can read minds OR where everyone is completely honest?","Would you rather shrink to bug size OR grow to building size?","Would you rather go to space OR to the deepest ocean?","Would you rather heal with touch OR see the future in dreams?","Would you rather have free rent for life OR free food for life?","Would you rather be famous in your country OR somewhat known worldwide?","Would you rather hold your breath 30 minutes OR run without tiring for 24 hours?","Would you rather have a personal assistant OR personal trainer for free for life?","Would you rather see colors that don't exist yet OR hear sounds no one else can?","Would you rather age from the neck down but not the face OR the face but not the body?","Would you rather know all recipes OR cook anything perfectly without them?","Would you rather have a golden retriever OR a cat that acts like one?","Would you rather win an argument with your boss OR with your best friend?","Would you rather have a 10-second superpower once daily OR a weak superpower all day?","Would you rather live where it never rains OR never stops raining?","Would you rather give a speech to 10,000 people OR perform surgery on a friend with instructions?","Would you rather instantly learn any skill OR instantly master one you already have?","Would you rather eat the world's hottest chili once OR a lemon every morning for a year?","Would you rather have your most embarrassing moment broadcast live OR most private thought published?","Would you rather be trapped in an elevator 24 hours with your ex OR most awkward acquaintance?","Would you rather have a wagging tail when happy OR flat ears when sad?","Would you rather type 300 words per minute OR talk at twice speed but still be understood?","Would you rather have all green lights forever OR never queue anywhere?","Would you rather visit every country OR every planet in the solar system?","Would you rather make anyone laugh OR make anyone cry?","Would you rather be extremely lucky OR extremely skilled?","Would you rather always feel slightly dizzy OR always slightly itchy?","Would you rather have perfect pitch OR perfect timing?","Would you rather be a night owl in a morning world OR a morning person in a night world?","Would you rather forget a language OR forget a mastered skill?","Would you rather invent something huge named after someone else OR something small named after you?","Would you rather always finish last OR never finish at all?","Would you rather your laugh sound like a fire alarm OR a cartoon character?","Would you rather have extra fingers OR extra toes?","Would you rather have a house with no windows OR no doors?","Would you rather speak all languages with a heavy accent OR one language perfectly?","Would you rather spend a day as a celebrity OR as the President?","Would you rather always have a great idea OR always execute ideas perfectly?","Would you rather eat your least favorite food daily for a year OR your favorite only once more ever?","Would you rather have perfect hair always OR flawless skin always?","Would you rather be a renowned chef OR a renowned musician?","Would you rather have a hug from someone you love whenever needed OR a nap whenever you want?","Would you rather never sleep OR never eat?","Would you rather find out life is a simulation OR a reality TV show?","Would you rather stop any argument OR start any conversation easily?","Would you rather have 1 true friend OR 100 acquaintances?","Would you rather relive your best day forever OR experience a new amazing day daily?","Would you rather remember every book OR every conversation?","Would you rather lose taste OR touch?","Would you rather wear wet socks a week OR too-small shoes a week?","Would you rather predict natural disasters OR be immune to them?","Would you rather be born in the 1800s OR in 2200?","Would you rather be the hero of a story no one tells OR the villain everyone knows?","Would you rather pause time for everyone else OR fast-forward your own aging?","Would you rather never be bored OR never be stressed?","Would you rather be the worst student at the best school OR the best at the worst?","Would you rather eat dinner alone for a year OR every meal with your least favorite person?","Would you rather live in a mountain cabin OR city penthouse?","Would you rather do a backflip OR solve any math problem instantly?","Would you rather have your dream home in the wrong city OR a modest home in your dream city?","Would you rather repeat a year OR skip one you haven't lived?","Would you rather have telepathy with no privacy OR total privacy with no empathy?","Would you rather be known for kindness OR intelligence?","Would you rather speak in riddles OR in questions always?","Would you rather win the lottery secretly OR earn the same over 10 years openly?","Would you rather have your dream car with no gas money OR unlimited gas in a beat-up car?","Would you rather see 1 minute into the future always OR 1 day into the future weekly?","Would you rather be the world's greatest comedian OR greatest poet?","Would you rather eat only breakfast food forever OR never eat breakfast again?","Would you rather sneeze glitter OR cry sparkling water?","Would you rather laugh uncontrollably at funerals OR cry at weddings?","Would you rather be unable to use search engines OR maps/GPS?","Would you rather always be right but never believed OR always wrong but always trusted?","Would you rather trade salaries with your boss OR lives with your best friend for a week?","Would you rather have an extra hour every day OR an extra week every year?","Would you rather have your home auto-cleaned OR auto-restocked with groceries?","Would you rather have the world's best wifi OR the world's best bed?","Would you rather have a guarantee of 50 happy years OR a chance at 90 mediocre ones?","Would you rather explore a new planet OR discover a new species on Earth?","Would you rather your thoughts be visible as subtitles OR emotions shown as a color above your head?","Would you rather be great at everything for 1 year OR good at one thing for 100 years?","Would you rather give up dessert forever OR fried food forever?","Would you rather meet your favorite celebrity and disappoint them OR never meet them but keep the fantasy?","Would you rather have a robot that does chores OR manages your schedule?","Would you rather be incredibly charismatic but clumsy OR graceful but conversationally awkward?","Would you rather have a free yacht OR a free private island?","Would you rather instantly fall asleep anywhere OR need only 4 hours of sleep?","Would you rather forget how to read OR write?","Would you rather live in a musical OR a comedy show?","Would you rather have no fears OR no regrets?","Would you rather have a personal library OR personal cinema?","Would you rather be an expert sailor OR pilot?","Would you rather master any sport instantly OR any instrument instantly?","Would you rather be the most followed person on social media OR most quoted in history?","Would you rather live where magic is real OR dinosaurs still exist?","Would you rather have unlimited Uber OR unlimited Airbnb?","Would you rather communicate only through GIFs OR voice notes?","Would you rather live in a tiny house with no bills OR a mansion with constant money stress?","Would you rather see your own future OR other people's futures?","Would you rather discover a cure for one disease OR prevent one war?","Would you rather always wake refreshed OR always fall asleep instantly?","Would you rather your life have background music only you hear OR subtitles only you see?","Would you rather dance everywhere OR sing everything?","Would you rather live in perpetual spring OR perpetual autumn?","Would you rather never be stuck in traffic OR never queue anywhere?","Would you rather have free therapy for life OR free gym for life?","Would you rather always get what you want OR always be grateful for what you have?","Would you rather speak to the dead OR see into parallel universes?","Would you rather go viral for something amazing OR be privately successful?","Would you rather be the first human on Mars OR the last to leave Earth?","Would you rather fix any machine OR heal any living thing?","Would you rather have an unforgettable face OR an unforgettable voice?","Would you rather know you're in a dream OR never know?","Would you rather access every book ever written OR every song ever recorded?","Would you rather have no social anxiety OR no physical pain?","Would you rather invent time travel OR be the first to use it?","Would you rather always apologize first OR forgive first?"],
+
+nhie:{
+mild:{general:["Never have I ever fallen asleep in a movie theater","Never have I ever cried at a cartoon","Never have I ever pretended not to see someone in public","Never have I ever talked to myself out loud in public","Never have I ever stayed in pajamas all day","Never have I ever eaten cereal for dinner","Never have I ever re-gifted a present","Never have I ever sent a text to the wrong person","Never have I ever laughed so hard I cried","Never have I ever binge-watched an entire season in one day","Never have I ever forgotten someone's name right after meeting them","Never have I ever said 'you too' when a waiter said 'enjoy your meal'","Never have I ever replied 'I'm on my way' while still at home","Never have I ever pretended to be busy to avoid a call","Never have I ever eaten food that fell on the floor","Never have I ever waved back at someone not waving at me","Never have I ever lied about reading a book","Never have I ever stalked my own social media profile","Never have I ever gone to bed without brushing my teeth","Never have I ever laughed at my own joke before finishing it","Never have I ever bought something just because it was on sale","Never have I ever taken a selfie with an animal","Never have I ever fake-laughed at a joke I didn't get","Never have I ever lost track of what day it is","Never have I ever sung loudly in the shower"],travel:["Never have I ever missed a flight","Never have I ever gotten lost in a foreign country","Never have I ever tried street food from a random stall","Never have I ever slept in an airport","Never have I ever traveled alone","Never have I ever lost my luggage","Never have I ever taken a spontaneous road trip","Never have I ever visited more than 5 countries","Never have I ever gone camping in the wild","Never have I ever gotten a stamp I can't remember getting","Never have I ever slept in a hostel","Never have I ever driven on the wrong side of the road","Never have I ever tried to speak a language and completely confused locals","Never have I ever visited a place because of a movie","Never have I ever been on a cruise"],food:["Never have I ever eaten sushi","Never have I ever tried a food I couldn't identify","Never have I ever eaten an entire pizza alone","Never have I ever cooked something completely inedible","Never have I ever eaten something on a dare","Never have I ever tried exotic meat","Never have I ever eaten durian","Never have I ever put pineapple on pizza","Never have I ever ordered something at a restaurant and hated it","Never have I ever eaten dessert before the main course","Never have I ever made a recipe from TikTok","Never have I ever been vegetarian for more than a week","Never have I ever eaten at a Michelin star restaurant","Never have I ever tried making sushi at home","Never have I ever ordered off a menu in a language I don't speak"],relationships:["Never have I ever had a crush on a friend","Never have I ever written a love letter","Never have I ever gone on a blind date","Never have I ever stayed friends with an ex","Never have I ever matched with someone I knew on a dating app","Never have I ever told someone I loved them first","Never have I ever cried over a breakup while eating ice cream","Never have I ever had a long distance relationship","Never have I ever been stood up","Never have I ever ghosted someone","Never have I ever asked someone out and been rejected","Never have I ever had a crush on a celebrity","Never have I ever sent a risky text and regretted it","Never have I ever stayed in a relationship too long","Never have I ever fallen for my best friend"]},
+moderate:{general:["Never have I ever lied on a resume","Never have I ever cheated in a board game","Never have I ever faked being sick","Never have I ever read someone's diary without permission","Never have I ever snuck into a place I wasn't supposed to be","Never have I ever eavesdropped on a private conversation","Never have I ever stolen something small","Never have I ever told a lie that snowballed","Never have I ever called in sick when completely fine","Never have I ever started a rumor","Never have I ever blamed someone else for what I did","Never have I ever skipped out on a bill","Never have I ever gotten into an argument with a stranger online","Never have I ever posted something I immediately regretted","Never have I ever unfollowed someone after a fight"],social:["Never have I ever left a party without saying goodbye","Never have I ever cried at a party","Never have I ever had a secret account","Never have I ever pretended to be someone else online","Never have I ever been kicked out of somewhere","Never have I ever made a scene in public","Never have I ever gotten into a fight at a party","Never have I ever kissed a stranger","Never have I ever had a nickname I hated","Never have I ever subtweeted someone","Never have I ever gone home with someone I just met","Never have I ever lied about my age online","Never have I ever been the last to get a joke","Never have I ever been caught talking to my plants","Never have I ever had 200+ unread emails"],adventure:["Never have I ever gone skydiving","Never have I ever bungee jumped","Never have I ever skinny dipped","Never have I ever driven over 120mph","Never have I ever hitchhiked","Never have I ever snuck out at night","Never have I ever climbed something I probably shouldn't have","Never have I ever been in a police car","Never have I ever trespassed somewhere exciting","Never have I ever had a near-death experience","Never have I ever done a dare I immediately regretted","Never have I ever got a speeding ticket","Never have I ever pulled an all-nighter for fun","Never have I ever jumped off something into water","Never have I ever been on a motorcycle"]},
+spicy:{general:["Never have I ever had feelings for two people at once","Never have I ever kissed someone I was just friends with","Never have I ever had a secret that could change a relationship","Never have I ever done something in public I should only do in private","Never have I ever been caught doing something embarrassing","Never have I ever lied to someone I was dating","Never have I ever had a situationship","Never have I ever flirted to get something","Never have I ever had a crush on someone in this room","Never have I ever been attracted to someone I shouldn't be","Never have I ever said 'I love you' without meaning it","Never have I ever cheated on a partner","Never have I ever kissed more than one person in a day","Never have I ever done something bold for love that didn't work out","Never have I ever kept talking to someone just because they're attractive"]}
+},
+
+trivia:{Movies:["What film features the line 'You can't handle the truth!'?|A Few Good Men","Which director made Pulp Fiction?|Quentin Tarantino","What 1994 film features Forrest Gump?|Forrest Gump","In The Matrix, what color pill does Neo take?|Red","Who played Iron Man in the MCU?|Robert Downey Jr.","Which movie won Best Picture at the 2020 Oscars?|Parasite","What is the highest-grossing film of all time (unadjusted)?|Avatar","Who directed Inception?|Christopher Nolan","What 1975 Spielberg film featured a great white shark?|Jaws","What film features 'Here's looking at you, kid'?|Casablanca","Which Pixar film is set in the Land of the Dead?|Coco","What Marvel film first featured all original Avengers?|The Avengers","Who plays the Joker in the 2019 film?|Joaquin Phoenix","Which director made The Godfather trilogy?|Francis Ford Coppola","Who directed Titanic (1997)?|James Cameron","Which actor played T'Challa in Black Panther?|Chadwick Boseman","What animated film features a lion named Simba?|The Lion King","Which film is set aboard the spaceship Nostromo?|Alien","What film franchise features Jack Sparrow?|Pirates of the Caribbean","Which film first used CGI for a main character?|The Abyss"],Music:["Who sang Thriller?|Michael Jackson","What band is Freddie Mercury associated with?|Queen","Who is known as the Queen of Pop?|Madonna","Which artist released the album '21'?|Adele","Who wrote Bohemian Rhapsody?|Freddie Mercury","Which country is K-pop from?|South Korea","What Beatles album shows them crossing Abbey Road?|Abbey Road","Who sang 'Rolling in the Deep'?|Adele","What instrument does Yo-Yo Ma play?|Cello","Which band is known for Hotel California?|Eagles","Who sang 'Superstition' in 1972?|Stevie Wonder","Which rapper's real name is Shawn Carter?|Jay-Z","What is Taylor Swift's debut album called?|Taylor Swift","Who sang 'Like a Rolling Stone' in 1965?|Bob Dylan","What band was Mick Jagger the frontman of?|The Rolling Stones","Which artist is known as 'The Material Girl'?|Madonna","Who is known for the album 'To Pimp a Butterfly'?|Kendrick Lamar","What singer is known as 'The Boss'?|Bruce Springsteen","Which band made 'Smells Like Teen Spirit'?|Nirvana","Who is known for 'Purple Rain'?|Prince"],Science:["What planet is known as the Red Planet?|Mars","What is the chemical symbol for gold?|Au","How many bones are in the adult human body?|206","What gas do plants absorb from the atmosphere?|Carbon dioxide","Who proposed the theory of general relativity?|Albert Einstein","What is the powerhouse of the cell?|Mitochondria","What element has atomic number 1?|Hydrogen","How many chromosomes does a human cell typically have?|46","What is the boiling point of water in Celsius?|100°C","What force keeps planets in orbit?|Gravity","What is the smallest unit of matter?|Atom","Which blood type is the universal donor?|O negative","What is the hardest natural substance on Earth?|Diamond","How many planets are in our solar system?|8","What organ pumps blood through the body?|Heart","What gas makes up most of Earth's atmosphere?|Nitrogen","What is the study of fungi called?|Mycology","What is Newton's first law?|An object in motion stays in motion","What is the chemical formula for water?|H2O","What is the speed of light approximately?|300,000 km/s"],History:["In what year did World War II end?|1945","Who was the first US President?|George Washington","What ancient wonder was in Alexandria?|The Library (or Lighthouse)","In what year did humans first land on the moon?|1969","Who wrote the Declaration of Independence?|Thomas Jefferson","What wall divided East and West Berlin?|Berlin Wall","What civilization built Machu Picchu?|Inca","In what year did the Titanic sink?|1912","Who was the first woman to win a Nobel Prize?|Marie Curie","What event started World War I?|Assassination of Archduke Franz Ferdinand","What year did the French Revolution begin?|1789","Who was the last emperor of China?|Puyi","What disease killed a third of Europe in the 14th century?|The Black Death","Who gave the 'I Have a Dream' speech?|Martin Luther King Jr.","What ancient city was destroyed by Vesuvius?|Pompeii","In what year did apartheid officially end?|1994","Who was the first person to circumnavigate the globe?|Ferdinand Magellan","What empire built the Colosseum?|Roman Empire","In what year did the Berlin Wall fall?|1989","Who was the first female Prime Minister of the UK?|Margaret Thatcher"],Sports:["How many players are on a basketball team on court?|5","What sport is played at Wimbledon?|Tennis","Which country has won the most FIFA World Cups?|Brazil","How many innings in a standard baseball game?|9","What sport uses a shuttlecock?|Badminton","Who holds the record for most Olympic gold medals?|Michael Phelps","In soccer, what does a red card mean?|Ejection from the game","How long is a standard marathon?|42.195 km","What sport is LeBron James associated with?|Basketball","Which country invented the Olympic Games?|Greece","How many holes in a standard golf course?|18","What sport does Serena Williams play?|Tennis","In American football, how many points is a touchdown?|6","What is the national sport of Japan?|Sumo wrestling","How many players on a soccer team?|11","Who is known as 'The Greatest' in boxing?|Muhammad Ali","What sport uses a puck?|Ice hockey","In which sport do you do a 'slam dunk'?|Basketball","What is 3 strikes in a row in bowling called?|Turkey","What is the highest score in darts starting from 501?|170"],Geography:["What is the capital of Australia?|Canberra","Which country has the most natural lakes?|Canada","What is the longest river in the world?|Nile","What mountain is the tallest in the world?|Mount Everest","What is the smallest country in the world?|Vatican City","Which continent has the Sahara Desert?|Africa","What is the largest ocean?|Pacific Ocean","What country has the most time zones?|France","What is the capital of Brazil?|Brasília","What is the deepest lake in the world?|Lake Baikal","Which country has the most coastline?|Canada","What desert is the driest on Earth?|Atacama","Which country has most of the Amazon rainforest?|Brazil","What is the capital of Japan?|Tokyo","Which country has the most UNESCO World Heritage Sites?|Italy","What is the capital of Canada?|Ottawa","Which country is home to the Great Barrier Reef?|Australia","What country spans both Europe and Asia?|Russia","What is the largest country by area?|Russia","What is the capital of South Africa?|Pretoria (executive)"],Food:["What is the main ingredient in guacamole?|Avocado","Which country is sushi from?|Japan","What cheese is in a Greek salad?|Feta","What is the spicy Korean paste?|Gochujang","What nut makes marzipan?|Almond","Which country invented pizza?|Italy","What grain is used in risotto?|Arborio rice","What is tahini made from?|Sesame seeds","What makes sourdough bread different?|Wild yeast fermentation","What is the primary ingredient in hummus?|Chickpeas","Which nut is used in Nutella?|Hazelnut","Which country invented croissants?|Austria (popularized by France)","What is traditional Japanese miso soup made from?|Miso paste and dashi","What gives turmeric its color?|Curcumin","What is the national dish of Spain?|Paella","What is a traditional British dessert using bread?|Bread and butter pudding","What fruit is used to make wine?|Grapes","What herb is pesto primarily made from?|Basil","What is the French term for cooking in a water bath?|Bain-marie","What is the main spice in a classic curry?|Turmeric"],Tech:["Who co-founded Apple?|Steve Jobs and Steve Wozniak","What does CPU stand for?|Central Processing Unit","What year was the first iPhone released?|2007","What programming language is named after a snake?|Python","What does HTML stand for?|HyperText Markup Language","Which company owns Android?|Google","What does 'www' stand for?|World Wide Web","What does USB stand for?|Universal Serial Bus","Which company made the PlayStation?|Sony","What is the most visited website?|Google","What does AI stand for?|Artificial Intelligence","What year was the internet made public?|1991","Who founded Microsoft?|Bill Gates and Paul Allen","What does RAM stand for?|Random Access Memory","What is the OS made by Apple?|macOS (or iOS)","What language is most used for data science?|Python","What is a blockchain?|A distributed digital ledger","What does URL stand for?|Uniform Resource Locator","What company owns YouTube?|Google","What is the programming language created by James Gosling?|Java"],Art:["Who painted the Mona Lisa?|Leonardo da Vinci","What movement is Salvador Dali associated with?|Surrealism","Which Dutch painter cut off his ear?|Vincent van Gogh","What is Michelangelo's famous ceiling called?|Sistine Chapel","Who sculpted The Thinker?|Auguste Rodin","Which artist made Campbell's Soup Cans?|Andy Warhol","What is the Japanese art of paper folding?|Origami","What does chiaroscuro refer to?|Light and shadow contrast","Who painted Guernica?|Pablo Picasso","What is fresco painting?|Painting on wet plaster","Which movement did Monet belong to?|Impressionism","Who created 'The Birth of Venus'?|Sandro Botticelli","What is pointillism?|Creating images from tiny dots","What museum is the Louvre?|Art museum in Paris","What material is Michelangelo's David made from?|Marble","Who painted 'The Persistence of Memory'?|Salvador Dali","What art style uses geometric shapes?|Cubism","Who is known for 'The Scream'?|Edvard Munch","What does 'Renaissance' mean?|Rebirth","Who painted the ceiling of the Sistine Chapel?|Michelangelo"],Nature:["What is the fastest land animal?|Cheetah","How many hearts does an octopus have?|3","What is the largest land animal?|African elephant","What do you call a group of lions?|Pride","What is the tallest tree species?|Coast redwood","What is the longest-living land animal?|Tortoise","What is the study of birds called?|Ornithology","Which animal has fingerprints most similar to humans?|Koala","What is the largest type of shark?|Whale shark","How long does a photon take to travel from the sun to Earth?|About 8 minutes","What is the loudest animal on Earth?|Sperm whale","How many eyes does a spider typically have?|8","What is a group of flamingos called?|Flamboyance","What is the deepest point in the ocean?|Mariana Trench","Which bird can fly backwards?|Hummingbird","What is the largest organ in the human body?|Skin","What type of animal is a Komodo dragon?|Lizard (reptile)","What is the world's largest living structure?|Great Barrier Reef","What do you call a group of wolves?|Pack","What is the only mammal capable of true flight?|Bat"]},
+
+mlt:["Most likely to accidentally reply-all to a company email","Most likely to become a reality TV star","Most likely to still be awake at 4am for no reason","Most likely to start a business that actually takes off","Most likely to cry at a commercial","Most likely to move to another country on a whim","Most likely to forget their own birthday","Most likely to befriend a complete stranger on a plane","Most likely to go viral for something unplanned","Most likely to become a millionaire","Most likely to still be in pajamas at 3pm","Most likely to bring homemade food to a party","Most likely to get lost in their own neighborhood","Most likely to talk their way out of a speeding ticket","Most likely to know every word to every pop song","Most likely to accidentally start a trend","Most likely to be a morning person nobody likes at 7am","Most likely to write a bestselling book","Most likely to be the last to realize the plot twist","Most likely to travel the world solo","Most likely to have a pet with a human name","Most likely to call their mom every day","Most likely to overcomplicate a simple task","Most likely to be the parent who embarrasses their kids","Most likely to end up on a cooking show","Most likely to ghost someone mid-date","Most likely to win a dance battle they didn't sign up for","Most likely to have a motivational quote for everything","Most likely to forget why they walked into a room","Most likely to organize a spontaneous road trip","Most likely to become obsessed with a niche hobby","Most likely to leave reviews for everything","Most likely to stay at a party after it's over","Most likely to carry snacks everywhere","Most likely to send a risky text and immediately regret it","Most likely to sleep through their alarm 5 times","Most likely to accidentally match outfits with a stranger","Most likely to be famous for something done as a joke","Most likely to have a solution for everything nobody asked for","Most likely to know too much useless trivia","Most likely to quote a movie in a real situation","Most likely to be the peacemaker in every fight","Most likely to get emotional over a sports game","Most likely to start a sentence and forget what they were saying","Most likely to be caught talking to their plants","Most likely to have 200 unread emails","Most likely to bring up astrology in an unrelated conversation","Most likely to take 47 photos before getting the right one","Most likely to have a 5-step skincare routine they swear by","Most likely to bring the best snack on a road trip","Most likely to accidentally give the best advice","Most likely to be adopted by a random cat","Most likely to turn a 5-minute task into a 3-hour project","Most likely to know every barista they've ever met","Most likely to cry during animated movies","Most likely to have an opinion about everything","Most likely to survive the longest in a zombie apocalypse","Most likely to be the last one to get a joke","Most likely to have the most embarrassing search history","Most likely to bring a book to a party","Most likely to stay calm in an absolute crisis","Most likely to own the most random collection","Most likely to make friends with the DJ","Most likely to start cooking at midnight","Most likely to get distracted mid-conversation","Most likely to have watched every season in one weekend","Most likely to become a life coach without any training","Most likely to know everything about everyone's relationship","Most likely to still have their childhood blanket","Most likely to turn down plans to stay home with their pet","Most likely to forget to charge their phone until 1%","Most likely to clap when a plane lands","Most likely to end up in a documentary","Most likely to win an argument using only memes","Most likely to spend 3 hours on a playlist for a 20-min drive","Most likely to be 10 minutes late to everything","Most likely to get attached to a fictional character","Most likely to finish a book in one sitting","Most likely to start a sentence with 'Actually…'","Most likely to accidentally become an influencer","Most likely to have 15 tabs open at all times","Most likely to apologize for things that weren't their fault","Most likely to hype everyone up constantly","Most likely to still be going at sunrise","Most likely to make a spreadsheet for a weekend trip","Most likely to have the best comeback three days later","Most likely to be the reason everyone is having fun","Most likely to invent a word that catches on","Most likely to know exactly what everyone wants as a gift","Most likely to get emotional at others' graduations","Most likely to win a random raffle","Most likely to have a dramatic story for every scar","Most likely to show up to the wrong event and stay anyway","Most likely to become best friends with someone they just met","Most likely to fall asleep during a horror movie","Most likely to start crying laughing at the worst moment","Most likely to text back immediately at any time","Most likely to end up with 10 dogs","Most likely to say 'trust me' right before things go wrong","Most likely to have already Googled this question","Most likely to be doing three things at once right now","Most likely to have strong opinions on loading a dishwasher","Most likely to write the funniest toast at a wedding","Most likely to be the loudest in a quiet library","Most likely to be doing something wild while everyone else sleeps","Most likely to become mayor of their town someday","Most likely to have memorized everyone's coffee order","Most likely to know a shortcut that takes twice as long","Most likely to form a book club that reads one book","Most likely to roast someone gently and still make them feel loved","Most likely to turn every awkward silence into a story","Most likely to take a spontaneous dip in the ocean fully clothed","Most likely to accidentally walk into the wrong meeting and present confidently","Most likely to cry, laugh, and eat simultaneously","Most likely to be the reason there are new rules at a venue","Most likely to give strangers perfect unsolicited life advice","Most likely to get a standing ovation at karaoke","Most likely to have the best 'how we met' story","Most likely to be main character energy in every room","Most likely to fall in love in an unexpected place","Most likely to send a heartfelt voice note at 2am","Most likely to make everyone feel like the most important person in the room","Most likely to stay to help clean up","Most likely to have a different life philosophy each year","Most likely to still be close with their kindergarten bestie","Most likely to hold someone's hair back or hand","Most likely to have a laugh more contagious than the joke","Most likely to have a backup plan for their backup plan","Most likely to keep everyone's secrets forever","Most likely to randomly burst into song","Most likely to try to fix something and make it slightly worse","Most likely to be caught drawing in the margins of their notes","Most likely to be voted most memorable at every reunion","Most likely to finally say what everyone is thinking","Most likely to bring up something they read at the perfect time","Most likely to get the party started when everyone is shy","Most likely to have the most chaotic calm energy","Most likely to have a signature dish for every occasion","Most likely to end up teaching something they never studied","Most likely to have been told 'you should do stand-up'","Most likely to know exactly what to say when someone is sad","Most likely to suggest the first group photo","Most likely to make a stranger's day without realizing it","Most likely to show up with exactly what you needed","Most likely to have the most creative Halloween costume","Most likely to notice something nobody else does","Most likely to be the glue that holds the friend group together","Most likely to accidentally become the group therapist","Most likely to still be up talking at 3am with someone who needed it","Most likely to turn a bad day into a funny story by morning","Most likely to carry everyone's energy on their back","Most likely to be the first to say 'let's do it' and mean it","Most likely to know the lyrics to a 1987 song nobody knows","Most likely to have cried happy tears more than once this month","Most likely to be described as 'a lot, but in the best way'","Most likely to make a tradition out of something that happened once","Most likely to be everyone's emergency contact","Most likely to still believe in magic","Most likely to just be really, really good at being human"]
+};
+
+// ═══════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════
+var ST={
+  // party
+  mode:'group',players:[],totalRounds:15,currentRound:0,
+  scores:{},lives:{},gameSeq:[],
+  usedWYR:[],usedNHIE:{},usedMLT:[],usedTrivia:{},
+  triviaInterval:null,
+  // free play
+  useAI:false,
+  swItems:[{n:'Inception',c:DC[0],w:1},{n:'The Dark Knight',c:DC[1],w:1},{n:'Interstellar',c:DC[2],w:1},{n:'Parasite',c:DC[3],w:1},{n:'Dune',c:DC[4],w:1}],
+  swHistory:[],
+  swAngle:0,swSpinning:false,
+  fpNhieDiff:'mild',fpNhieSubj:'general',
+  fpTriviaCat:'Movies',fpTriviaTimer:30,fpTriviaInterval:null,
+  fpTriviaAnswer:'',
+  fpMltPlayers:[],fpMltVoted:'',
+  fpWyrCat:'Funny',
+  editColorIdx:-1,
+  // used tracking for free play
+  fpUsedWYR:[],fpUsedNHIE:{},fpUsedMLT:[],fpUsedTrivia:{}
+};
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function brighten(hex){try{var n=parseInt(hex.replace('#',''),16);return 'rgb('+Math.min(255,(n>>16)+70)+','+Math.min(255,((n>>8)&255)+70)+','+Math.min(255,(n&255)+70)+')';}catch(e){return hex;}}
+function safeEnc(o){return btoa(unescape(encodeURIComponent(JSON.stringify(o))));}
+function safeDec(s){return JSON.parse(decodeURIComponent(escape(atob(s))));}
+function acol(i){return AC[i%AC.length];}
+function initials(n){return n.slice(0,1).toUpperCase();}
+
+// ═══════════════════════════════════════════════════════
+// SCREEN NAV
+// ═══════════════════════════════════════════════════════
+function show(id){document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});document.getElementById(id).classList.add('active');}
+
+// ═══════════════════════════════════════════════════════
+// HOME
+// ═══════════════════════════════════════════════════════
+document.getElementById('partyModeBtn').addEventListener('click',function(){show('s-setup');});
+document.getElementById('freeModeBtn').addEventListener('click',function(){show('s-free');initFreePlay();});
+
+// ═══════════════════════════════════════════════════════
+// SETUP
+// ═══════════════════════════════════════════════════════
+document.querySelectorAll('.mode-pill').forEach(function(b){
+  b.addEventListener('click',function(){
+    document.querySelectorAll('.mode-pill').forEach(function(x){x.classList.remove('active');});
+    b.classList.add('active');ST.mode=b.dataset.mode;
+  });
+});
+var rounds=15;
+document.getElementById('rDown').addEventListener('click',function(){if(rounds>5){rounds-=5;document.getElementById('rVal').textContent=rounds;}});
+document.getElementById('rUp').addEventListener('click',function(){if(rounds<30){rounds+=5;document.getElementById('rVal').textContent=rounds;}});
+function renderPList(){
+  document.getElementById('pList').innerHTML=ST.players.map(function(p,i){
+    return '<div class="player-row"><div class="avatar" style="background:'+acol(i)+'">'+initials(p)+'</div><span style="flex:1;font-size:.85rem">'+esc(p)+'</span><button onclick="removeP('+i+')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:.85rem">✕</button></div>';
+  }).join('');
+}
+window.removeP=function(i){ST.players.splice(i,1);renderPList();};
+function addP(){var v=document.getElementById('pInp').value.trim();if(!v||ST.players.length>=10)return;ST.players.push(v);document.getElementById('pInp').value='';renderPList();}
+document.getElementById('addPBtn').addEventListener('click',addP);
+document.getElementById('pInp').addEventListener('keydown',function(e){if(e.key==='Enter')addP();});
+document.getElementById('setupBackBtn').addEventListener('click',function(){show('s-home');});
+document.getElementById('letsGoBtn').addEventListener('click',function(){if(ST.players.length<2){alert('Add at least 2 players!');return;}ST.totalRounds=rounds;startParty();});
+
+// ═══════════════════════════════════════════════════════
+// PARTY ENGINE
+// ═══════════════════════════════════════════════════════
+var GAMES=['wyr','nhie','trivia','mlt'],DUO_GAMES=['wyr','nhie','trivia'];
+function buildSeq(){
+  var seq=[],pool=ST.mode==='duo'?DUO_GAMES:GAMES;
+  for(var i=0;i<ST.totalRounds;i++){
+    var g=pool[i%pool.length];
+    if(seq.length&&seq[seq.length-1]===g){var a=pool.filter(function(x){return x!==g;});g=a[Math.floor(Math.random()*a.length)];}
+    seq.push(g);
+  }
+  return seq;
+}
+function startParty(){
+  ST.currentRound=0;ST.scores={};ST.lives={};
+  ST.usedWYR=[];ST.usedNHIE={};ST.usedMLT=[];ST.usedTrivia={};
+  ST.players.forEach(function(p){ST.scores[p]=0;ST.lives[p]=3;});
+  ST.gameSeq=buildSeq();
+  show('s-party');nextRound();
+}
+function nextRound(){
+  if(ST.currentRound>=ST.totalRounds){endParty();return;}
+  var game=ST.gameSeq[ST.currentRound];ST.currentRound++;
+  var pct=Math.round((ST.currentRound-1)/ST.totalRounds*100);
+  document.getElementById('pBar').style.width=pct+'%';
+  document.getElementById('roundLbl').textContent='Round '+ST.currentRound+' of '+ST.totalRounds;
+  document.getElementById('roundGame').textContent=gLabel(game);
+  document.getElementById('nextRndBtn').style.display='none';
+  document.getElementById('skipRndBtn').style.display='inline-block';
+  renderPartyGame(game);
+}
+function gLabel(g){return{wyr:'🤔 Would You Rather',nhie:'🙈 Never Have I Ever',trivia:'🧠 Trivia',mlt:'😂 Most Likely To'}[g]||'';}
+function setHost(m){document.getElementById('hostTxt').textContent=m;}
+function showNext(){document.getElementById('nextRndBtn').style.display='inline-block';document.getElementById('skipRndBtn').style.display='none';}
+document.getElementById('nextRndBtn').addEventListener('click',nextRound);
+document.getElementById('skipRndBtn').addEventListener('click',function(){nextRound();});
+
+function pickQ(pool,used){
+  var avail=pool.filter(function(_,i){return used.indexOf(i)===-1;});
+  if(!avail.length){used.length=0;avail=pool;}
+  var idx=Math.floor(Math.random()*avail.length);
+  used.push(pool.indexOf(avail[idx]));return avail[idx];
+}
+function pickQKeyed(pool,used,key){
+  if(!used[key])used[key]=[];
+  return pickQ(pool,used[key]);
+}
+
+// ── PARTY WYR ─────────────────────────────────────────
+function renderPartyGame(game){
+  var fn={wyr:partyWYR,nhie:partyNHIE,trivia:partyTrivia,mlt:partyMLT}[game];
+  if(fn)fn();
+}
+function partyWYR(){
+  setHost("Would You Rather! Pick your side — majority wins, minority defends! 🎤");
+  var q=pickQ(DATA.wyr,ST.usedWYR);
+  var parts=q.split(' OR ');
+  var oA=parts[0].replace(/^Would you rather /i,'');var oB=parts[1]||'';
+  var voted=false;
+  document.getElementById('gameCard').innerHTML=
+    '<span class="game-badge" style="background:rgba(124,77,255,.2);color:var(--accent2)">🤔 Would You Rather</span>'
+    +'<div class="wyr-opts" id="pWyrOpts"><div class="wyr-opt" id="pWA"><strong>A)</strong> '+esc(oA)+'</div><div class="wyr-opt" id="pWB"><strong>B)</strong> '+esc(oB)+'</div></div>'
+    +'<div style="font-size:.76rem;color:var(--muted);text-align:center">Pick your side — then everyone defends! Majority gets +1 point.</div>'
+    +'<div id="pWyrRes" style="display:none"></div>';
+  function pick(ch){
+    if(voted)return;voted=true;
+    var aV=Math.floor(Math.random()*ST.players.length)+1,bV=ST.players.length-aV+1;
+    if(ch==='b'){bV++;aV=Math.max(0,aV-1);}else{aV++;bV=Math.max(0,bV-1);}
+    var maj=aV>=bV?'a':'b';
+    if(ch===maj&&ST.players[0])ST.scores[ST.players[0]]=(ST.scores[ST.players[0]]||0)+1;
+    document.getElementById('pW'+ch.toUpperCase()).classList.add('sel-'+ch);
+    document.getElementById('pWyrRes').innerHTML='<div style="text-align:center;padding:.5rem;background:var(--bg3);border-radius:10px"><div style="font-size:.76rem;color:var(--muted)">Group leaning</div><div style="font-weight:700;color:var(--accent2);margin-top:.2rem">'+(maj==='a'?esc(oA):esc(oB))+'</div><div style="font-size:.74rem;color:var(--muted);margin-top:.15rem">'+aV+' vs '+bV+'</div></div>';
+    document.getElementById('pWyrRes').style.display='block';
+    showNext();
+  }
+  document.getElementById('pWA').addEventListener('click',function(){pick('a');});
+  document.getElementById('pWB').addEventListener('click',function(){pick('b');});
+}
+
+// ── PARTY NHIE ────────────────────────────────────────
+function partyNHIE(){
+  setHost("Never Have I Ever! Lose a life if you HAVE done it. Last survivor gets +3! ❤️");
+  var diff=ST.usedNHIE._diff||'mild',subj=ST.usedNHIE._subj||'general';
+  var pool=(DATA.nhie[diff]&&DATA.nhie[diff][subj])||DATA.nhie.mild.general;
+  var stmt=pickQKeyed(pool,ST.usedNHIE,diff+'_'+subj);
+  var livesHtml=ST.players.map(function(p){var l=ST.lives[p]||0;var h='';for(var i=0;i<3;i++)h+=(i<l?'❤️':'🖤');return '<div class="life-badge"><div class="hearts">'+h+'</div><div style="max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(p)+'</div></div>';}).join('');
+  document.getElementById('gameCard').innerHTML=
+    '<span class="game-badge" style="background:rgba(255,77,141,.15);color:var(--pink)">🙈 Never Have I Ever</span>'
+    +'<div class="q-box"><span class="q-text">'+esc(stmt)+'</span></div>'
+    +'<div class="lives-row" id="pLives">'+livesHtml+'</div>'
+    +'<div style="display:flex;gap:.4rem;flex-wrap:wrap;justify-content:center">'
+    +ST.players.map(function(p){return '<button class="btn sm" data-np="'+esc(p)+'">-❤️ '+esc(p)+'</button>';}).join('')
+    +'</div>';
+  document.querySelectorAll('[data-np]').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      var p=btn.dataset.np;if(!(ST.lives[p]>0))return;
+      ST.lives[p]--;
+      var lH=ST.players.map(function(pp){var l=ST.lives[pp]||0;var h='';for(var i=0;i<3;i++)h+=(i<l?'❤️':'🖤');return '<div class="life-badge"><div class="hearts">'+h+'</div><div style="max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(pp)+'</div></div>';}).join('');
+      document.getElementById('pLives').innerHTML=lH;
+      var alive=ST.players.filter(function(pp){return ST.lives[pp]>0;});
+      if(alive.length===1){ST.scores[alive[0]]=(ST.scores[alive[0]]||0)+3;setHost('🎉 '+alive[0]+' survived! +3 points!');showNext();}
+    });
+  });
+  showNext();
+}
+
+// ── PARTY TRIVIA ──────────────────────────────────────
+function partyTrivia(){
+  setHost("Trivia! Spin for a category — first correct answer wins +3 points! 🧠");
+  var cats=Object.keys(DATA.trivia);
+  var wItems=cats.map(function(c,i){return{n:c,c:DC[i%DC.length]};});
+  var wAngle=0,wSpun=false;
+  document.getElementById('gameCard').innerHTML=
+    '<span class="game-badge" style="background:rgba(0,229,204,.15);color:var(--teal)">🧠 Trivia</span>'
+    +'<div class="wheel-section"><div class="wheel-wrap" style="width:240px;height:240px"><div class="w-pointer"></div><canvas id="pTW" width="240" height="240"></canvas></div><button class="btn primary" id="pTSpin">Spin for category!</button></div>'
+    +'<div id="pTContent" style="display:none"></div>';
+  var cv=document.getElementById('pTW'),cx2=cv.getContext('2d');
+  function drawPT(hi){
+    cx2.clearRect(0,0,240,240);var sw=Math.PI*2/wItems.length,cur=wAngle;
+    for(var i=0;i<wItems.length;i++){
+      var a0=cur,a1=cur+sw;cx2.beginPath();cx2.moveTo(120,120);cx2.arc(120,120,112,a0,a1);cx2.closePath();
+      cx2.fillStyle=i===hi?brighten(wItems[i].c):wItems[i].c;cx2.fill();
+      cx2.strokeStyle='#0e0c15';cx2.lineWidth=2;cx2.stroke();
+      cx2.save();cx2.translate(120,120);cx2.rotate(cur+sw/2);cx2.textAlign='right';cx2.fillStyle='rgba(255,255,255,.93)';cx2.font='bold 9px system-ui';cx2.fillText(wItems[i].n,105,4);cx2.restore();cur+=sw;
+    }
+    cx2.beginPath();cx2.arc(120,120,12,0,Math.PI*2);cx2.fillStyle='#0e0c15';cx2.fill();cx2.strokeStyle='#fff';cx2.lineWidth=2;cx2.stroke();
+  }
+  drawPT(-1);
+  document.getElementById('pTSpin').addEventListener('click',function(){
+    if(wSpun)return;wSpun=true;this.disabled=true;
+    var total=Math.PI*2*(4+Math.random()*4)+Math.random()*Math.PI*2,dur=2400,t0=performance.now(),a0=wAngle;
+    function ease(t){return 1-Math.pow(1-t,4);}
+    (function frame(now){
+      var p=Math.min((now-t0)/dur,1);wAngle=a0+total*ease(p);drawPT(-1);
+      if(p<1){requestAnimationFrame(frame);return;}
+      wAngle=((wAngle%(Math.PI*2))+(Math.PI*2))%(Math.PI*2);
+      var s2=Math.PI*2/wItems.length,ptr=((Math.PI*1.5-wAngle)%(Math.PI*2)+(Math.PI*2))%(Math.PI*2),win=Math.floor(ptr/s2)%wItems.length;
+      drawPT(win);var cat=wItems[win].n;setHost("Category: "+cat+"! Answer quickly for +3 points!");loadPTQ(cat);
+    })(performance.now());
+  });
+}
+function loadPTQ(cat){
+  var raw=pickQKeyed(DATA.trivia[cat],ST.usedTrivia,cat),parts=raw.split('|'),q=parts[0],a=parts[1]||'';
+  var left=30,total=30;clearInterval(ST.triviaInterval);
+  document.getElementById('pTContent').style.display='block';
+  document.getElementById('pTContent').innerHTML=
+    '<div class="q-box"><span class="q-text">'+esc(q)+'</span></div>'
+    +'<div class="timer-wrap" id="pTTimer" style="margin-top:.5rem"><div class="timer-num" id="pTNum">30</div><div class="tbar-bg" style="max-width:300px;width:100%"><div class="tbar" id="pTBar"></div></div><button class="btn sm ghost" id="pTStop">Stop</button></div>'
+    +'<div class="answer-box" id="pTAns"><div style="font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.25rem">Answer</div><div class="answer-val">'+esc(a)+'</div></div>'
+    +'<div style="display:flex;gap:.4rem;flex-wrap:wrap;justify-content:center;margin-top:.5rem"><button class="btn" id="pTReveal">👁 Reveal</button><div id="pTScoreBtns" style="display:flex;gap:.3rem;flex-wrap:wrap;justify-content:center"></div></div>';
+  document.getElementById('pTBar').style.width='100%';document.getElementById('pTBar').style.background='var(--accent)';
+  ST.triviaInterval=setInterval(function(){
+    left--;var pct=Math.round(left/total*100);
+    document.getElementById('pTBar').style.width=pct+'%';document.getElementById('pTNum').textContent=left;
+    if(left<=8)document.getElementById('pTBar').style.background='var(--red)';
+    if(left<=0){clearInterval(ST.triviaInterval);document.getElementById('pTTimer').style.display='none';document.getElementById('pTAns').classList.add('show');}
+  },1000);
+  document.getElementById('pTStop').addEventListener('click',function(){clearInterval(ST.triviaInterval);document.getElementById('pTTimer').style.display='none';});
+  document.getElementById('pTReveal').addEventListener('click',function(){
+    clearInterval(ST.triviaInterval);document.getElementById('pTTimer').style.display='none';document.getElementById('pTAns').classList.add('show');
+    var sb=document.getElementById('pTScoreBtns');
+    sb.innerHTML=ST.players.map(function(p){return '<button class="btn sm" data-atp="'+esc(p)+'">✅ '+esc(p)+' +3</button>';}).join('');
+    document.querySelectorAll('[data-atp]').forEach(function(b){
+      b.addEventListener('click',function(){if(b.dataset.awarded)return;b.dataset.awarded='1';ST.scores[b.dataset.atp]=(ST.scores[b.dataset.atp]||0)+3;b.style.background='var(--green)';b.style.color='#000';setHost('🎉 '+b.dataset.atp+' got it! +3 points!');showNext();});
+    });
+    showNext();
+  });
+  showNext();
+}
+
+// ── PARTY MLT ─────────────────────────────────────────
+function partyMLT(){
+  setHost("Most Likely To! Vote for who fits — most votes gets +2 points! 👑");
+  var prompt=pickQ(DATA.mlt,ST.usedMLT);var voted='';
+  document.getElementById('gameCard').innerHTML=
+    '<span class="game-badge" style="background:rgba(255,179,0,.15);color:var(--amber)">😂 Most Likely To</span>'
+    +'<div class="q-box"><span class="q-text">'+esc(prompt)+'</span></div>'
+    +'<div style="font-size:.78rem;color:var(--muted);text-align:center">Vote for one player:</div>'
+    +'<div class="vote-grid" id="pMLTGrid">'+ST.players.map(function(p){return '<div class="vote-card" data-mvp="'+esc(p)+'">'+esc(p)+'</div>';}).join('')+'</div>'
+    +'<div id="pMLTRes" style="display:none"></div>';
+  document.querySelectorAll('.vote-card[data-mvp]').forEach(function(c){
+    c.addEventListener('click',function(){
+      if(voted)return;voted=c.dataset.mvp;
+      document.querySelectorAll('.vote-card[data-mvp]').forEach(function(x){x.classList.remove('sel');});c.classList.add('sel');
+      var counts={};ST.players.forEach(function(p){counts[p]=0;});counts[voted]++;
+      ST.players.forEach(function(p){if(Math.random()>0.4){var r=ST.players[Math.floor(Math.random()*ST.players.length)];counts[r]++;}});
+      var sorted=Object.entries(counts).sort(function(a,b){return b[1]-a[1];});var win=sorted[0][0];
+      ST.scores[win]=(ST.scores[win]||0)+2;
+      var tot=Object.values(counts).reduce(function(a,b){return a+b;},0)||1;
+      var bars=sorted.map(function(e){var pct=Math.round(e[1]/tot*100);return '<div class="score-bar-row"><span class="score-name">'+esc(e[0])+'</span><div class="sbar-bg"><div class="sbar-fill" style="width:'+pct+'%;background:var(--amber)"></div></div><span class="score-pts">'+pct+'%</span></div>';}).join('');
+      document.getElementById('pMLTRes').innerHTML='<div style="background:var(--bg3);border-radius:10px;padding:.7rem;margin-top:.4rem"><div style="text-align:center;font-weight:700;color:var(--amber);margin-bottom:.5rem">👑 '+esc(win)+' wins! +2 pts</div>'+bars+'</div>';
+      document.getElementById('pMLTRes').style.display='block';
+      launchConfetti(acol(ST.players.indexOf(win)));showNext();
+    });
+  });
+  showNext();
+}
+
+// ── END PARTY ─────────────────────────────────────────
+function endParty(){
+  clearInterval(ST.triviaInterval);show('s-recap');launchConfetti(DC[0]);
+  var sorted=Object.entries(ST.scores).sort(function(a,b){return b[1]-a[1];});
+  var trophies=[];
+  if(sorted[0])trophies.push({icon:'🏆',label:'Party Champion',name:sorted[0][0],detail:sorted[0][1]+' points'});
+  if(sorted[1])trophies.push({icon:'🥈',label:'Runner Up',name:sorted[1][0],detail:sorted[1][1]+' points'});
+  var nhieSrt=Object.entries(ST.lives).sort(function(a,b){return b[1]-a[1];});
+  if(nhieSrt[0]&&nhieSrt[0][1]>0)trophies.push({icon:'❤️',label:'NHIE Survivor',name:nhieSrt[0][0],detail:nhieSrt[0][1]+' lives left'});
+  if(sorted.length>2)trophies.push({icon:'🥄',label:'Wooden Spoon',name:sorted[sorted.length-1][0],detail:sorted[sorted.length-1][1]+' pts'});
+  document.getElementById('trophyRow').innerHTML=trophies.map(function(t){return '<div class="trophy-item"><div class="trophy-icon">'+t.icon+'</div><div><div class="trophy-label">'+t.label+'</div><div class="trophy-name">'+esc(t.name)+'</div><div class="trophy-detail">'+t.detail+'</div></div></div>';}).join('');
+  var fs=document.getElementById('finalScores');var mx=sorted[0]?sorted[0][1]:1;mx=mx||1;
+  fs.innerHTML=sorted.map(function(e){var pct=Math.round(e[1]/mx*100);var col=acol(ST.players.indexOf(e[0]));return '<div class="score-bar-row"><span class="score-name" style="color:'+col+'">'+esc(e[0])+'</span><div class="sbar-bg"><div class="sbar-fill" style="width:'+pct+'%;background:'+col+'"></div></div><span class="score-pts">'+e[1]+'</span></div>';}).join('');
+}
+document.getElementById('playAgainBtn').addEventListener('click',function(){ST.players=[];ST.scores={};ST.lives={};show('s-home');});
+
+// ═══════════════════════════════════════════════════════
+// FREE PLAY INIT
+// ═══════════════════════════════════════════════════════
+function initFreePlay(){
+  initFPTabs();initSW();initFPWYR();initFPNHIE();initFPTrivia();initFPMLT();
+  // AI toggle
+  document.getElementById('togPreload').addEventListener('click',function(){ST.useAI=false;updateAIToggle();});
+  document.getElementById('togAI').addEventListener('click',function(){ST.useAI=true;updateAIToggle();});
+  updateAIToggle();
+  // load URL params
+  try{var u=new URL(location.href),d=u.searchParams.get('d');if(d){var o=safeDec(d);if(o.items)ST.swItems=o.items;swRenderList();swDraw(-1);}}catch(e){}
+}
+function updateAIToggle(){
+  document.getElementById('togPreload').classList.toggle('active',!ST.useAI);
+  document.getElementById('togAI').classList.toggle('active',ST.useAI);
+  var s=document.getElementById('aiStatus');
+  if(ST.useAI){s.textContent='active';s.className='ai-status ok';}else{s.textContent='preloaded';s.className='ai-status off';}
+}
+function initFPTabs(){
+  document.querySelectorAll('.fp-tab').forEach(function(t){
+    t.addEventListener('click',function(){
+      document.querySelectorAll('.fp-tab').forEach(function(x){x.classList.remove('active');});
+      document.querySelectorAll('.fp-page').forEach(function(x){x.classList.remove('active');});
+      t.classList.add('active');
+      document.getElementById('fp-'+t.dataset.fp).classList.add('active');
+    });
+  });
+}
+document.getElementById('fpBackBtn').addEventListener('click',function(){show('s-home');});
+
+// ═══════════════════════════════════════════════════════
+// FREE PLAY — SPIN WHEEL
+// ═══════════════════════════════════════════════════════
+var swCanvas,swCtx;
+function initSW(){
+  swCanvas=document.getElementById('swC');swCtx=swCanvas.getContext('2d');
+  swRenderList();swDraw(-1);
+  // Packs
+  document.querySelectorAll('.pack-btn').forEach(function(b){
+    b.addEventListener('click',function(){
+      var items=PACKS[b.dataset.pack]||[];
+      items.forEach(function(n){ST.swItems.push({n:n,c:DC[ST.swItems.length%DC.length],w:1});});
+      swRenderList();swDraw(-1);
+    });
+  });
+  document.getElementById('swAddBtn').addEventListener('click',swAdd);
+  document.getElementById('swInp').addEventListener('keydown',function(e){if(e.key==='Enter')swAdd();});
+  document.getElementById('swImportBtn').addEventListener('click',function(){
+    var parts=document.getElementById('swImportTa').value.split(',').map(function(s){return s.trim();}).filter(Boolean);
+    parts.forEach(function(n){ST.swItems.push({n:n,c:DC[ST.swItems.length%DC.length],w:1});});
+    document.getElementById('swImportTa').value='';swRenderList();swDraw(-1);
+  });
+  document.getElementById('swClearAll').addEventListener('click',function(){if(confirm('Clear all?')){ST.swItems=[];swRenderList();swDraw(-1);}});
+  document.getElementById('swList').addEventListener('click',function(e){
+    var di=e.target.dataset.di,ci=e.target.dataset.ci,wi=e.target.dataset.wi,ni=e.target.dataset.ni;
+    if(di!==undefined){ST.swItems.splice(+di,1);swRenderList();swDraw(-1);}
+    else if(ci!==undefined){openColorModal(+ci);}
+    else if(wi!==undefined){var v=prompt('Weight (1-10):',ST.swItems[+wi].w||1);if(v!==null&&+v>=1&&+v<=10){ST.swItems[+wi].w=+v;swRenderList();swDraw(-1);}}
+    else if(ni!==undefined){swEditName(e.target,+ni);}
+  });
+  document.getElementById('swSpinBtn').addEventListener('click',function(){
+    if(ST.swSpinning||ST.swItems.length<2)return;
+    if(document.getElementById('swCountdown').checked){swCountdown(doSWSpin);}else{doSWSpin();}
+  });
+  document.getElementById('swClearHist').addEventListener('click',function(){ST.swHistory=[];renderSWHist();});
+  // Save/Load
+  refreshSWSelect();
+  document.getElementById('swSaveList').addEventListener('click',function(){
+    var name=document.getElementById('swSaveName').value.trim();if(!name)return;
+    var saved=getSWLists();saved[name]=ST.swItems;putSWLists(saved);refreshSWSelect();document.getElementById('swSaveName').value='';
+  });
+  document.getElementById('swLoadList').addEventListener('click',function(){
+    var name=document.getElementById('swSavedSel').value;if(!name)return;
+    var saved=getSWLists();if(saved[name]){ST.swItems=saved[name];swRenderList();swDraw(-1);}
+  });
+  document.getElementById('swDelList').addEventListener('click',function(){
+    var name=document.getElementById('swSavedSel').value;if(!name)return;
+    var saved=getSWLists();delete saved[name];putSWLists(saved);refreshSWSelect();
+  });
+  // Share/Export/Screenshot
+  document.getElementById('swShare').addEventListener('click',function(){
+    var enc=safeEnc({items:ST.swItems});var url=location.origin+location.pathname+'?d='+enc;
+    if(navigator.clipboard){navigator.clipboard.writeText(url).then(function(){alert('Link copied!');});}else{prompt('Copy:',url);}
+  });
+  document.getElementById('swExport').addEventListener('click',function(){
+    var txt=ST.swItems.map(function(it,i){return (i+1)+'. '+it.n;}).join('\n');
+    var blob=new Blob([txt],{type:'text/plain'});var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='spinnight-list.txt';a.click();
+  });
+  document.getElementById('swScreenshot').addEventListener('click',function(){
+    var a=document.createElement('a');a.href=swCanvas.toDataURL();a.download='spinnight-wheel.png';a.click();
+  });
+}
+function getSWLists(){try{return JSON.parse(localStorage.getItem('sn_lists')||'{}');}catch(e){return {};}}
+function putSWLists(o){try{localStorage.setItem('sn_lists',JSON.stringify(o));}catch(e){}}
+function refreshSWSelect(){
+  var sel=document.getElementById('swSavedSel'),saved=getSWLists(),cur=sel.value;
+  sel.innerHTML='<option value="">— select —</option>';
+  Object.keys(saved).forEach(function(k){var o=document.createElement('option');o.value=k;o.textContent=k;sel.appendChild(o);});
+  if(cur)sel.value=cur;
+}
+function swAdd(){var v=document.getElementById('swInp').value.trim();if(!v)return;ST.swItems.push({n:v,c:DC[ST.swItems.length%DC.length],w:1});document.getElementById('swInp').value='';swRenderList();swDraw(-1);}
+function swEditName(el,i){
+  var inp=document.createElement('input');inp.type='text';inp.value=ST.swItems[i].n;inp.style.cssText='flex:1;font-size:.82rem;background:var(--bg);border:1px solid var(--accent);border-radius:5px;color:var(--text);padding:1px 5px;';
+  el.replaceWith(inp);inp.focus();inp.select();
+  function done(){ST.swItems[i].n=inp.value.trim()||ST.swItems[i].n;swRenderList();swDraw(-1);}
+  inp.addEventListener('blur',done);inp.addEventListener('keydown',function(e){if(e.key==='Enter')inp.blur();});
+}
+function swRenderList(){
+  var cnt=document.getElementById('swCnt');if(cnt)cnt.textContent='('+ST.swItems.length+')';
+  var ul=document.getElementById('swList');if(!ul)return;
+  if(!ST.swItems.length){ul.innerHTML='<li style="background:none;font-size:.8rem;color:var(--muted);text-align:center;padding:.5rem">No items yet!</li>';return;}
+  ul.innerHTML=ST.swItems.map(function(it,i){
+    return '<li><span class="dot" style="background:'+it.c+'" data-ci="'+i+'"></span>'
+      +'<span class="iname" data-ni="'+i+'">'+esc(it.n)+'</span>'
+      +'<span class="wb" data-wi="'+i+'">×'+(it.w||1)+'</span>'
+      +'<button class="del" data-di="'+i+'">✕</button></li>';
+  }).join('');
+}
+function swTotalW(){return ST.swItems.reduce(function(s,it){return s+(it.w||1);},0);}
+function swDraw(hi){
+  if(!swCanvas)return;var cx=150,cy=150,r=147;swCtx.clearRect(0,0,300,300);
+  if(!ST.swItems.length){swCtx.beginPath();swCtx.arc(cx,cy,r,0,Math.PI*2);swCtx.fillStyle='#1a1726';swCtx.fill();swCtx.fillStyle='#555';swCtx.font='13px system-ui';swCtx.textAlign='center';swCtx.fillText('Add items!',cx,cy+5);return;}
+  var tw=swTotalW(),cur=ST.swAngle;
+  ST.swItems.forEach(function(it,i){
+    var sw=Math.PI*2*(it.w||1)/tw,a0=cur,a1=cur+sw;
+    swCtx.beginPath();swCtx.moveTo(cx,cy);swCtx.arc(cx,cy,r,a0,a1);swCtx.closePath();
+    swCtx.fillStyle=i===hi?brighten(it.c):it.c;swCtx.fill();swCtx.strokeStyle='#0e0c15';swCtx.lineWidth=2;swCtx.stroke();
+    if(sw>0.1){swCtx.save();swCtx.translate(cx,cy);swCtx.rotate(cur+sw/2);swCtx.textAlign='right';swCtx.fillStyle='rgba(255,255,255,.93)';var fs2=ST.swItems.length>10?9:ST.swItems.length>7?10:12;swCtx.font='600 '+fs2+'px system-ui';var lbl=it.n.length>15?it.n.slice(0,13)+'…':it.n;if(it.w>1)lbl='×'+it.w+' '+lbl;swCtx.fillText(lbl,r-7,4);swCtx.restore();}
+    cur+=sw;
+  });
+  swCtx.beginPath();swCtx.arc(cx,cy,14,0,Math.PI*2);swCtx.fillStyle='#0e0c15';swCtx.fill();swCtx.strokeStyle='#fff';swCtx.lineWidth=2;swCtx.stroke();
+}
+function swCountdown(cb){
+  ST.swSpinning=true;document.getElementById('swSpinBtn').disabled=true;
+  var n=3,w=document.getElementById('swWinner');w.textContent='';
+  var iv=setInterval(function(){if(n>0){w.textContent=n;n--;}else if(n===0){w.textContent='Go!';n--;}else{clearInterval(iv);w.textContent='';cb();}},800);
+}
+function doSWSpin(){
+  ST.swSpinning=true;document.getElementById('swSpinBtn').disabled=true;
+  var total=Math.PI*2*(5+Math.random()*6)+Math.random()*Math.PI*2,dur=3200+Math.random()*1600,t0=performance.now(),a0=ST.swAngle;
+  function ease(t){return 1-Math.pow(1-t,4);}
+  (function frame(now){
+    var p=Math.min((now-t0)/dur,1);ST.swAngle=a0+total*ease(p);swDraw(-1);
+    if(p<1){requestAnimationFrame(frame);return;}
+    ST.swAngle=((ST.swAngle%(Math.PI*2))+(Math.PI*2))%(Math.PI*2);
+    var tw=swTotalW(),cum=0,win=0,ptr=((Math.PI*1.5-ST.swAngle)%(Math.PI*2)+(Math.PI*2))%(Math.PI*2);
+    for(var i=0;i<ST.swItems.length;i++){cum+=(ST.swItems[i].w||1)/tw*Math.PI*2;if(ptr<cum){win=i;break;}}
+    swDraw(win);document.getElementById('swWinner').textContent='🎉 '+ST.swItems[win].n;
+    ST.swHistory.unshift({n:ST.swItems[win].n,c:ST.swItems[win].c});if(ST.swHistory.length>20)ST.swHistory.pop();
+    renderSWHist();launchConfetti(ST.swItems[win].c);
+    if(document.getElementById('swRemove').checked){setTimeout(function(){ST.swItems.splice(win,1);swRenderList();swDraw(-1);},1200);}
+    ST.swSpinning=false;document.getElementById('swSpinBtn').disabled=false;
+  })(performance.now());
+}
+function renderSWHist(){
+  var el=document.getElementById('swHistList');if(!el)return;
+  if(!ST.swHistory.length){el.innerHTML='<div style="font-size:.8rem;color:var(--muted);text-align:center;padding:.4rem">No spins yet</div>';return;}
+  el.innerHTML=ST.swHistory.map(function(h,i){return '<div style="display:flex;align-items:center;gap:.4rem;font-size:.78rem;padding:.2rem .35rem;border-radius:6px;background:var(--bg3)"><span style="color:var(--muted);min-width:14px">'+(i+1)+'</span><span style="width:7px;height:7px;border-radius:50%;background:'+h.c+';display:inline-block;flex-shrink:0"></span><span>'+esc(h.n)+'</span></div>';}).join('');
+}
+
+// ── COLOR MODAL ────────────────────────────────────────
+function openColorModal(i){ST.editColorIdx=i;document.getElementById('colorPicker').value=ST.swItems[i].c;document.getElementById('colorHex').value=ST.swItems[i].c;document.getElementById('colorModal').classList.add('open');}
+document.getElementById('colorPicker').addEventListener('input',function(){document.getElementById('colorHex').value=this.value;});
+document.getElementById('colorHex').addEventListener('input',function(){if(/^#[0-9a-fA-F]{6}$/.test(this.value))document.getElementById('colorPicker').value=this.value;});
+document.getElementById('colorOk').addEventListener('click',function(){var h=document.getElementById('colorHex').value;if(/^#[0-9a-fA-F]{6}$/.test(h))ST.swItems[ST.editColorIdx].c=h;document.getElementById('colorModal').classList.remove('open');swRenderList();swDraw(-1);});
+document.getElementById('colorCancel').addEventListener('click',function(){document.getElementById('colorModal').classList.remove('open');});
+
+// ═══════════════════════════════════════════════════════
+// FREE PLAY — WYR
+// ═══════════════════════════════════════════════════════
+var WYR_CATS=['Funny','Romantic','Adventurous','Philosophical','Silly','Random'];
+function initFPWYR(){
+  var cr=document.getElementById('fpWyrCats');
+  WYR_CATS.forEach(function(c){
+    var b=document.createElement('button');b.className='pill'+(c==='Funny'?' active':'');b.textContent=c;
+    b.addEventListener('click',function(){document.querySelectorAll('#fpWyrCats .pill').forEach(function(x){x.classList.remove('active');});b.classList.add('active');ST.fpWyrCat=c;});
+    cr.appendChild(b);
+  });
+  ST.fpWyrCat='Funny';
+  document.getElementById('fpWyrNew').addEventListener('click',fpGenWYR);
+}
+async function fpGenWYR(){
+  var el=document.getElementById('fpWyrBox'),lo=document.getElementById('fpWyrLoading');
+  document.getElementById('fpWyrOpts').style.display='none';document.getElementById('fpWyrResult').style.display='none';
+  if(ST.useAI){
+    lo.style.display='flex';el.querySelector('.q-text')||el.appendChild(Object.assign(document.createElement('span'),{className:'q-text'}));
+    try{var t=await askClaude('Generate ONE creative "Would You Rather" dilemma. Category: '+ST.fpWyrCat+'. Format EXACTLY as: "Would you rather [A] OR [B]?" Return ONLY the question.');renderFPWYR(el,t.trim());}
+    catch(e){var q2=fpPickWYR();renderFPWYR(el,q2);}
+    lo.style.display='none';
+  }else{var q=fpPickWYR();renderFPWYR(el,q);}
+}
+function fpPickWYR(){return pickQ(DATA.wyr,ST.fpUsedWYR);}
+function renderFPWYR(el,q){
+  var parts=q.split(' OR ');var oA=parts[0].replace(/^Would you rather /i,'');var oB=parts[1]||'';
+  el.innerHTML='<span class="q-text">'+esc(q)+'</span>';
+  var opts=document.getElementById('fpWyrOpts');opts.style.display='flex';opts.innerHTML='<div class="wyr-opt" id="fpWA"><strong>A)</strong> '+esc(oA)+'</div><div class="wyr-opt" id="fpWB"><strong>B)</strong> '+esc(oB)+'</div>';
+  var picked=false;
+  document.getElementById('fpWA').addEventListener('click',function(){if(picked)return;picked=true;this.classList.add('sel-a');document.getElementById('fpWB').style.opacity='.5';document.getElementById('fpWyrResult').textContent='You chose A! Defend your pick! 🎤';document.getElementById('fpWyrResult').style.display='block';});
+  document.getElementById('fpWB').addEventListener('click',function(){if(picked)return;picked=true;this.classList.add('sel-b');document.getElementById('fpWA').style.opacity='.5';document.getElementById('fpWyrResult').textContent='You chose B! Defend your pick! 🎤';document.getElementById('fpWyrResult').style.display='block';});
+}
+
+// ═══════════════════════════════════════════════════════
+// FREE PLAY — NHIE
+// ═══════════════════════════════════════════════════════
+var NHIE_DIFFS=['mild','moderate','spicy'],NHIE_SUBJS=['general','travel','food','relationships','social','adventure'];
+function initFPNHIE(){
+  var dr=document.getElementById('fpNhieDiff');
+  NHIE_DIFFS.forEach(function(d){
+    var icons={mild:'🟢',moderate:'🟡',spicy:'🔴'};
+    var b=document.createElement('button');b.className='pill'+(d==='mild'?' active':'');b.textContent=icons[d]+' '+d;
+    b.addEventListener('click',function(){document.querySelectorAll('#fpNhieDiff .pill').forEach(function(x){x.classList.remove('active');});b.classList.add('active');ST.fpNhieDiff=d;});
+    dr.appendChild(b);
+  });
+  var sr=document.getElementById('fpNhieSubj');
+  NHIE_SUBJS.forEach(function(s){
+    var b=document.createElement('button');b.className='pill'+(s==='general'?' active':'');b.textContent=s;
+    b.addEventListener('click',function(){document.querySelectorAll('#fpNhieSubj .pill').forEach(function(x){x.classList.remove('active');});b.classList.add('active');ST.fpNhieSubj=s;});
+    sr.appendChild(b);
+  });
+  document.getElementById('fpNhieNew').addEventListener('click',fpGenNHIE);
+}
+async function fpGenNHIE(){
+  var el=document.getElementById('fpNhieBox'),lo=document.getElementById('fpNhieLoading');
+  if(ST.useAI){
+    lo.style.display='flex';
+    try{var t=await askClaude('Generate ONE "Never Have I Ever" statement. Difficulty: '+ST.fpNhieDiff+'. Subject: '+ST.fpNhieSubj+'. Format: "Never have I ever [statement]." Return ONLY the statement.');el.innerHTML='<span class="q-text">'+esc(t.trim())+'</span>';}
+    catch(e){var q2=fpPickNHIE();el.innerHTML='<span class="q-text">'+esc(q2)+'</span>';}
+    lo.style.display='none';
+  }else{var q=fpPickNHIE();el.innerHTML='<span class="q-text">'+esc(q)+'</span>';}
+}
+function fpPickNHIE(){
+  var pool=(DATA.nhie[ST.fpNhieDiff]&&DATA.nhie[ST.fpNhieDiff][ST.fpNhieSubj])||DATA.nhie.mild.general;
+  return pickQKeyed(pool,ST.fpUsedNHIE,ST.fpNhieDiff+'_'+ST.fpNhieSubj);
+}
+
+// ═══════════════════════════════════════════════════════
+// FREE PLAY — TRIVIA
+// ═══════════════════════════════════════════════════════
+var FP_TIMERS=[15,30,45,60];
+function initFPTrivia(){
+  var cg=document.getElementById('fpTriviaCats');
+  Object.keys(DATA.trivia).forEach(function(c){
+    var b=document.createElement('button');b.className='cat-btn'+(c==='Movies'?' active':'');b.textContent=c;
+    b.addEventListener('click',function(){document.querySelectorAll('#fpTriviaCats .cat-btn').forEach(function(x){x.classList.remove('active');});b.classList.add('active');ST.fpTriviaCat=c;});
+    cg.appendChild(b);
+  });
+  var tr=document.getElementById('fpTriviaTimers');
+  FP_TIMERS.forEach(function(t){
+    var b=document.createElement('button');b.className='pill'+(t===30?' active':'');b.textContent=t+'s';
+    b.addEventListener('click',function(){document.querySelectorAll('#fpTriviaTimers .pill').forEach(function(x){x.classList.remove('active');});b.classList.add('active');ST.fpTriviaTimer=t;});
+    tr.appendChild(b);
+  });
+  document.getElementById('fpTriviaNew').addEventListener('click',fpGenTrivia);
+  document.getElementById('fpTStop').addEventListener('click',fpStopTimer);
+  document.getElementById('fpRevealBtn').addEventListener('click',function(){
+    fpStopTimer();document.getElementById('fpTriviaAns').classList.add('show');document.getElementById('fpRevealBtn').style.display='none';
+  });
+}
+async function fpGenTrivia(){
+  clearInterval(ST.fpTriviaInterval);document.getElementById('fpTimerWrap').style.display='none';document.getElementById('fpTriviaAns').classList.remove('show');document.getElementById('fpRevealBtn').style.display='none';
+  var el=document.getElementById('fpTriviaBox'),lo=document.getElementById('fpTriviaLoading');
+  if(ST.useAI){
+    lo.style.display='flex';
+    try{
+      var txt=await askClaude('Generate ONE trivia question for category: '+ST.fpTriviaCat+'. Respond ONLY in JSON: {"question":"...","answer":"..."}');
+      txt=txt.replace(/```json|```/g,'').trim();var obj=JSON.parse(txt);
+      ST.fpTriviaAnswer=obj.answer;el.innerHTML='<span class="q-text">'+esc(obj.question)+'</span>';
+      document.getElementById('fpTriviaAnsVal').textContent=obj.answer;
+    }catch(e){fpLoadTriviaPreload();}
+    lo.style.display='none';
+  }else{fpLoadTriviaPreload();}
+  fpStartTimer();document.getElementById('fpRevealBtn').style.display='inline-block';
+}
+function fpLoadTriviaPreload(){
+  var raw=pickQKeyed(DATA.trivia[ST.fpTriviaCat],ST.fpUsedTrivia,ST.fpTriviaCat),parts=raw.split('|');
+  ST.fpTriviaAnswer=parts[1]||'';
+  document.getElementById('fpTriviaBox').innerHTML='<span class="q-text">'+esc(parts[0])+'</span>';
+  document.getElementById('fpTriviaAnsVal').textContent=ST.fpTriviaAnswer;
+}
+function fpStartTimer(){
+  var total=ST.fpTriviaTimer,left=total;
+  var bar=document.getElementById('fpTBar'),num=document.getElementById('fpTNum');
+  document.getElementById('fpTimerWrap').style.display='flex';
+  bar.style.width='100%';bar.style.background='var(--accent)';num.textContent=total;
+  clearInterval(ST.fpTriviaInterval);
+  ST.fpTriviaInterval=setInterval(function(){
+    left--;var pct=Math.round(left/total*100);bar.style.width=pct+'%';num.textContent=left;
+    if(left<=8)bar.style.background='var(--red)';
+    if(left<=0){fpStopTimer();document.getElementById('fpTriviaAns').classList.add('show');document.getElementById('fpRevealBtn').style.display='none';}
+  },1000);
+}
+function fpStopTimer(){clearInterval(ST.fpTriviaInterval);document.getElementById('fpTimerWrap').style.display='none';}
+
+// ═══════════════════════════════════════════════════════
+// FREE PLAY — MLT
+// ═══════════════════════════════════════════════════════
+function initFPMLT(){
+  document.getElementById('fpMltAddP').addEventListener('click',fpAddPlayer);
+  document.getElementById('fpMltPInp').addEventListener('keydown',function(e){if(e.key==='Enter')fpAddPlayer();});
+  document.getElementById('fpMltNew').addEventListener('click',fpGenMLT);
+  document.getElementById('fpMltReveal').addEventListener('click',fpRevealMLT);
+}
+function fpAddPlayer(){
+  var v=document.getElementById('fpMltPInp').value.trim();if(!v)return;
+  ST.fpMltPlayers.push(v);document.getElementById('fpMltPInp').value='';renderFPMltTags();
+}
+function renderFPMltTags(){
+  document.getElementById('fpMltPTags').innerHTML=ST.fpMltPlayers.map(function(p,i){
+    return '<span style="display:inline-flex;align-items:center;gap:.25rem;background:var(--bg3);border:1px solid var(--border);border-radius:999px;padding:.22rem .55rem;font-size:.78rem;">'+esc(p)+'<button onclick="fpRemovePlayer('+i+')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:.78rem;padding:0">✕</button></span>';
+  }).join('');
+}
+window.fpRemovePlayer=function(i){ST.fpMltPlayers.splice(i,1);renderFPMltTags();};
+async function fpGenMLT(){
+  ST.fpMltVoted='';document.getElementById('fpMltResults').style.display='none';document.getElementById('fpMltVote').style.display='none';
+  var el=document.getElementById('fpMltBox'),lo=document.getElementById('fpMltLoading');
+  var prompt='';
+  if(ST.useAI){
+    lo.style.display='flex';
+    try{var t=await askClaude('Generate ONE fun "Most Likely To" prompt. Format: "Most likely to [funny situation]". Return ONLY the prompt.');prompt=t.trim();}
+    catch(e){prompt=fpPickMLT();}
+    lo.style.display='none';
+  }else{prompt=fpPickMLT();}
+  el.innerHTML='<span class="q-text">'+esc(prompt)+'</span>';
+  if(ST.fpMltPlayers.length>=2){
+    var grid=document.getElementById('fpMltVoteGrid');
+    grid.innerHTML=ST.fpMltPlayers.map(function(p){return '<div class="vote-card" data-fmp="'+esc(p)+'">'+esc(p)+'</div>';}).join('');
+    document.querySelectorAll('.vote-card[data-fmp]').forEach(function(c){
+      c.addEventListener('click',function(){document.querySelectorAll('.vote-card[data-fmp]').forEach(function(x){x.classList.remove('sel');});c.classList.add('sel');ST.fpMltVoted=c.dataset.fmp;});
+    });
+    document.getElementById('fpMltVote').style.display='block';
+    document.getElementById('fpMltResults').style.display='none';
+    document.getElementById('fpMltReveal').style.display='inline-block';
+  }
+}
+function fpPickMLT(){return pickQ(DATA.mlt,ST.fpUsedMLT);}
+function fpRevealMLT(){
+  var counts={};ST.fpMltPlayers.forEach(function(p){counts[p]=0;});
+  if(ST.fpMltVoted)counts[ST.fpMltVoted]++;
+  ST.fpMltPlayers.forEach(function(p){if(Math.random()>0.45){var r=ST.fpMltPlayers[Math.floor(Math.random()*ST.fpMltPlayers.length)];counts[r]++;}});
+  var sorted=Object.entries(counts).sort(function(a,b){return b[1]-a[1];});var win=sorted[0][0];
+  var tot=Object.values(counts).reduce(function(a,b){return a+b;},0)||1;
+  var bars=sorted.map(function(e){var pct=Math.round(e[1]/tot*100);return '<div class="score-bar-row"><span class="score-name">'+esc(e[0])+'</span><div class="sbar-bg"><div class="sbar-fill" style="width:'+pct+'%;background:var(--amber)"></div></div><span class="score-pts">'+pct+'%</span></div>';}).join('');
+  document.getElementById('fpMltResults').innerHTML='<div style="background:var(--bg3);border-radius:10px;padding:.7rem;margin-top:.4rem"><div style="text-align:center;font-weight:700;color:var(--amber);margin-bottom:.5rem">👑 '+esc(win)+'!</div>'+bars+'</div>';
+  document.getElementById('fpMltResults').style.display='block';
+  document.getElementById('fpMltReveal').style.display='none';
+  launchConfetti(DC[ST.fpMltPlayers.indexOf(win)%DC.length]);
+}
+
+// ═══════════════════════════════════════════════════════
+// AI HELPER
+// ═══════════════════════════════════════════════════════
+async function askClaude(prompt){
+  try{
+    var res=await fetch('/.netlify/functions/ask-claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:prompt})});
+    if(!res.ok)throw new Error('Network error');
+    var data=await res.json();return data.result||'';
+  }catch(e){
+    // fallback: try direct API (for Claude.ai sandbox)
+    var res2=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:500,messages:[{role:'user',content:prompt}]})});
+    var d2=await res2.json();
+    return(d2.content||[]).filter(function(b){return b.type==='text';}).map(function(b){return b.text;}).join('');
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// CONFETTI
+// ═══════════════════════════════════════════════════════
+var cfC=document.getElementById('cf'),cfCtx=cfC.getContext('2d'),particles=[];
+function launchConfetti(color){
+  cfC.width=window.innerWidth;cfC.height=window.innerHeight;
+  for(var i=0;i<100;i++)particles.push({x:Math.random()*cfC.width,y:-10,vx:(Math.random()-.5)*6,vy:Math.random()*4+2,c:[color,DC[Math.floor(Math.random()*DC.length)]][Math.floor(Math.random()*2)],w:Math.random()*10+4,h:Math.random()*5+3,r:Math.random()*Math.PI*2,vr:(Math.random()-.5)*.2,life:1});
+  cfAnim();
+}
+function cfAnim(){
+  cfCtx.clearRect(0,0,cfC.width,cfC.height);particles=particles.filter(function(p){return p.life>0;});
+  if(!particles.length)return;
+  particles.forEach(function(p){p.x+=p.vx;p.y+=p.vy;p.vy+=0.1;p.r+=p.vr;p.life-=0.013;cfCtx.save();cfCtx.translate(p.x,p.y);cfCtx.rotate(p.r);cfCtx.globalAlpha=p.life;cfCtx.fillStyle=p.c;cfCtx.fillRect(-p.w/2,-p.h/2,p.w,p.h);cfCtx.restore();});
+  requestAnimationFrame(cfAnim);
+}
+</script>
+</body>
+</html>

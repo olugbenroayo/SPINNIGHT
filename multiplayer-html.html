@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SpinNight — Multiplayer</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0e0c15;--bg2:#1a1726;--bg3:#231f33;--border:#2e2b3e;--text:#f0eeff;--muted:#8b849e;--accent:#7c4dff;--accent2:#b388ff;--pink:#ff4d8d;--teal:#00e5cc;--amber:#ffb300;--green:#00e676;--red:#ff5252;--r:14px}
+body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+.screen{display:none;min-height:100vh;flex-direction:column;align-items:center;justify-content:center;padding:1.5rem 1rem;animation:fadeIn .3s ease}
+.screen.active{display:flex}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.logo{font-size:2.2rem;font-weight:800;letter-spacing:-.03em;background:linear-gradient(135deg,#b388ff,#ff4d8d);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:.2rem}
+.tagline{font-size:.85rem;color:var(--muted);margin-bottom:2rem;text-align:center}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:1.5rem;width:100%;max-width:420px}
+.card-title{font-size:1.1rem;font-weight:700;margin-bottom:1rem;text-align:center}
+.btn{padding:.5rem 1rem;border:1px solid var(--border);background:var(--bg2);color:var(--text);border-radius:10px;font-size:.85rem;cursor:pointer;transition:all .15s;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;gap:.4rem}
+.btn:hover{background:var(--bg3);border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600}
+.btn.primary:hover{background:var(--accent2)}
+.btn.primary:disabled{background:var(--bg3);color:var(--muted);border-color:var(--border);cursor:not-allowed}
+.btn.ghost{background:none;border-color:transparent;color:var(--muted)}
+.btn.ghost:hover{color:var(--text);background:var(--bg3)}
+.btn.lg{padding:.75rem 2rem;font-size:1rem;font-weight:700;border-radius:999px;box-shadow:0 4px 20px rgba(124,77,255,.35);width:100%}
+.btn.lg:hover{transform:translateY(-1px)}
+.btn.danger{border-color:var(--red);color:var(--red)}
+.btn.danger:hover{background:rgba(255,82,82,.1)}
+.inp{padding:.55rem .8rem;background:var(--bg);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:.9rem;outline:none;width:100%}
+.inp:focus{border-color:var(--accent)}
+.inp-row{display:flex;gap:.4rem}
+.label{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.4rem}
+.gap{display:flex;flex-direction:column;gap:.8rem}
+.row{display:flex;gap:.6rem;align-items:center}
+
+/* Room code display */
+.room-code{font-size:3rem;font-weight:800;letter-spacing:.2em;color:var(--accent2);text-align:center;padding:1rem;background:var(--bg3);border-radius:14px;margin:.5rem 0;cursor:pointer;transition:background .15s}
+.room-code:hover{background:var(--border)}
+.room-code-hint{font-size:.75rem;color:var(--muted);text-align:center;margin-top:.25rem}
+
+/* Player list in lobby */
+.players-lobby{display:flex;flex-direction:column;gap:.4rem;max-height:240px;overflow-y:auto}
+.player-lobby-row{display:flex;align-items:center;gap:.6rem;background:var(--bg3);border-radius:10px;padding:.45rem .7rem}
+.avatar{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;flex-shrink:0}
+.host-badge{font-size:.65rem;background:rgba(255,179,0,.2);color:var(--amber);border-radius:5px;padding:.1rem .4rem;font-weight:600}
+.online-dot{width:7px;height:7px;border-radius:50%;background:var(--green);margin-left:auto;flex-shrink:0}
+
+/* Game area */
+.game-wrap{width:100%;max-width:480px;display:flex;flex-direction:column;gap:.9rem}
+.progress-wrap{background:var(--bg3);border-radius:999px;height:5px;overflow:hidden}
+.progress-bar{height:100%;background:linear-gradient(90deg,var(--accent),var(--pink));border-radius:999px;transition:width .5s}
+.round-info{display:flex;justify-content:space-between;font-size:.74rem;color:var(--muted);margin-bottom:.3rem}
+.game-card{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:1.3rem;display:flex;flex-direction:column;gap:.8rem}
+.game-badge{display:inline-flex;align-items:center;gap:.35rem;padding:.26rem .7rem;border-radius:999px;font-size:.74rem;font-weight:600}
+.q-box{background:var(--bg3);border-radius:12px;padding:1.1rem;text-align:center;min-height:70px;display:flex;align-items:center;justify-content:center}
+.q-text{font-size:1.05rem;font-weight:500;line-height:1.5}
+
+/* Timer */
+.timer-wrap{display:flex;flex-direction:column;align-items:center;gap:.3rem}
+.timer-num{font-size:2.4rem;font-weight:800;color:var(--accent2);transition:color .3s}
+.timer-num.urgent{color:var(--red)}
+.tbar-bg{width:100%;height:6px;background:var(--bg3);border-radius:3px;overflow:hidden}
+.tbar{height:100%;background:var(--accent);border-radius:3px;transition:width .1s linear,background .4s}
+
+/* Answer options */
+.opts-grid{display:flex;flex-direction:column;gap:.5rem}
+.opt-btn{padding:.75rem 1rem;border:2px solid var(--border);background:var(--bg3);border-radius:12px;text-align:left;font-size:.9rem;cursor:pointer;transition:all .2s;color:var(--text);line-height:1.4;width:100%}
+.opt-btn:hover:not(:disabled){border-color:var(--accent2);background:rgba(124,77,255,.1)}
+.opt-btn.selected{border-color:var(--accent);background:rgba(124,77,255,.2);color:var(--accent2);font-weight:600}
+.opt-btn.correct{border-color:var(--green);background:rgba(0,230,118,.15);color:var(--green)}
+.opt-btn.wrong{border-color:var(--red);background:rgba(255,82,82,.1);color:var(--red);opacity:.7}
+.opt-btn:disabled{cursor:default}
+
+/* WYR options */
+.wyr-opts{display:flex;gap:.5rem}
+.wyr-opt{flex:1;padding:.75rem;border:2px solid var(--border);background:var(--bg3);border-radius:12px;text-align:center;font-size:.85rem;cursor:pointer;transition:all .2s;color:var(--text);line-height:1.4}
+.wyr-opt:hover:not(:disabled){border-color:var(--accent2)}
+.wyr-opt.sel-a{border-color:var(--accent);background:rgba(124,77,255,.2);color:var(--accent2);font-weight:600}
+.wyr-opt.sel-b{border-color:var(--pink);background:rgba(255,77,141,.15);color:var(--pink);font-weight:600}
+.wyr-opt:disabled{cursor:default}
+
+/* Vote button */
+.vote-grid{display:flex;flex-wrap:wrap;gap:.4rem;justify-content:center}
+.vote-btn{padding:.5rem .95rem;border:2px solid var(--border);background:var(--bg3);border-radius:10px;font-size:.85rem;cursor:pointer;transition:all .2s;color:var(--text)}
+.vote-btn:hover:not(:disabled){border-color:var(--accent2)}
+.vote-btn.sel{border-color:var(--accent);background:rgba(124,77,255,.2);color:var(--accent2);font-weight:600}
+.vote-btn:disabled{cursor:default}
+
+/* NHIE life button */
+.life-btn{padding:.65rem 1rem;border:2px solid var(--border);background:var(--bg3);border-radius:12px;font-size:.95rem;cursor:pointer;transition:all .2s;color:var(--text);width:100%;font-weight:600}
+.life-btn.has{border-color:var(--pink);background:rgba(255,77,141,.15);color:var(--pink)}
+.life-btn.hasnt{border-color:var(--green);background:rgba(0,230,118,.1);color:var(--green)}
+.life-btn:disabled{cursor:default;opacity:.7}
+
+/* Waiting indicator */
+.waiting{display:flex;align-items:center;gap:.5rem;color:var(--muted);font-size:.85rem;justify-content:center;padding:.5rem 0}
+.dots span{animation:blink 1.2s infinite;font-size:1.2rem;line-height:1}
+.dots span:nth-child(2){animation-delay:.2s}
+.dots span:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:.2}40%{opacity:1}}
+
+/* Answer count pill */
+.answer-count{display:inline-flex;align-items:center;gap:.3rem;background:var(--bg3);border:1px solid var(--border);border-radius:999px;padding:.2rem .6rem;font-size:.75rem;color:var(--muted)}
+
+/* Scoreboard */
+.scoreboard{display:flex;flex-direction:column;gap:.35rem}
+.score-row{display:flex;align-items:center;gap:.55rem;background:var(--bg3);border-radius:10px;padding:.4rem .65rem;transition:background .2s}
+.score-row.me{background:rgba(124,77,255,.15);border:1px solid rgba(124,77,255,.3)}
+.score-rank{font-size:.78rem;color:var(--muted);min-width:18px;text-align:center}
+.score-name{flex:1;font-size:.85rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.score-pts{font-size:.85rem;font-weight:700;color:var(--accent2)}
+.score-lives{font-size:.78rem;letter-spacing:1px}
+
+/* Results bar */
+.result-bar-row{display:flex;align-items:center;gap:.55rem;font-size:.83rem;margin-bottom:.32rem}
+.rbar-bg{flex:1;height:7px;background:var(--bg3);border-radius:4px;overflow:hidden}
+.rbar-fill{height:100%;border-radius:4px;transition:width .7s ease}
+.rbar-label{min-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rbar-pct{min-width:30px;text-align:right;color:var(--muted);font-size:.76rem}
+
+/* Recap */
+.trophy-row{display:flex;flex-direction:column;gap:.55rem;margin-bottom:.9rem}
+.trophy-item{display:flex;align-items:center;gap:.65rem;background:var(--bg3);border-radius:12px;padding:.65rem .9rem}
+.trophy-icon{font-size:1.3rem;flex-shrink:0}
+.trophy-label{font-size:.67rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.trophy-name{font-size:.95rem;font-weight:700}
+.trophy-detail{font-size:.74rem;color:var(--muted)}
+
+/* Toast */
+.toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(100px);background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:.6rem 1.1rem;font-size:.85rem;transition:transform .3s ease;z-index:999;white-space:nowrap}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+/* Confetti */
+#cf{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:998}
+
+/* Loading overlay */
+.loading-overlay{position:fixed;inset:0;background:rgba(14,12,21,.85);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.8rem;z-index:500;display:none}
+.loading-overlay.show{display:flex}
+.spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner-text{font-size:.9rem;color:var(--muted)}
+
+/* Host controls */
+.host-controls{background:rgba(124,77,255,.08);border:1px solid rgba(124,77,255,.2);border-radius:12px;padding:.7rem .9rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem}
+.host-label{font-size:.75rem;color:var(--accent2);font-weight:600}
+</style>
+</head>
+<body>
+<canvas id="cf"></canvas>
+<div class="toast" id="toast"></div>
+<div class="loading-overlay" id="loadingOverlay"><div class="spinner"></div><div class="spinner-text" id="loadingText">Loading…</div></div>
+
+<!-- ══ HOME ══ -->
+<div class="screen active" id="s-home">
+  <div class="logo">SpinNight</div>
+  <div class="tagline">Multiplayer Mode 🎮</div>
+  <div class="card gap">
+    <div class="label">Your name</div>
+    <input class="inp" id="myName" placeholder="Enter your name…" maxlength="20"/>
+    <button class="btn primary lg" id="hostBtn">🎉 Create Room</button>
+    <div style="text-align:center;font-size:.8rem;color:var(--muted)">— or —</div>
+    <div class="inp-row">
+      <input class="inp" id="joinCode" placeholder="Enter room code…" maxlength="6" style="text-transform:uppercase;letter-spacing:.1em;font-size:1.1rem;font-weight:700"/>
+      <button class="btn primary" id="joinBtn">Join</button>
+    </div>
+    <button class="btn ghost" onclick="location.href='/'">← Back to SpinNight</button>
+  </div>
+</div>
+
+<!-- ══ SETUP (HOST ONLY) ══ -->
+<div class="screen" id="s-setup">
+  <div class="card gap">
+    <div class="card-title">Game Settings ⚙️</div>
+    <div>
+      <div class="label">Rounds</div>
+      <div class="row">
+        <button class="btn" id="rDown">−</button>
+        <span style="font-size:1.2rem;font-weight:700;color:var(--accent2);flex:1;text-align:center" id="rVal">15</span>
+        <button class="btn" id="rUp">+</button>
+      </div>
+    </div>
+    <div>
+      <div class="label">Games to include</div>
+      <div style="display:flex;gap:.4rem;flex-wrap:wrap" id="gameToggles">
+        <button class="game-toggle active" data-g="wyr">🤔 WYR</button>
+        <button class="game-toggle active" data-g="nhie">🙈 NHIE</button>
+        <button class="game-toggle active" data-g="trivia">🧠 Trivia</button>
+        <button class="game-toggle active" data-g="mlt">😂 MLT</button>
+      </div>
+    </div>
+    <button class="btn primary lg" id="createRoomBtn">Create Room →</button>
+    <button class="btn ghost" id="setupBackBtn">← Back</button>
+  </div>
+</div>
+
+<!-- ══ LOBBY ══ -->
+<div class="screen" id="s-lobby">
+  <div class="card gap" style="max-width:460px">
+    <div style="text-align:center">
+      <div style="font-size:.75rem;color:var(--muted);margin-bottom:.3rem">ROOM CODE — tap to copy</div>
+      <div class="room-code" id="lobbyCode" onclick="copyCode()">------</div>
+      <div class="room-code-hint">Share this code with your friends!</div>
+    </div>
+    <div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.4rem">
+        <span class="label" style="margin:0">Players <span id="playerCount" style="color:var(--accent2)"></span></span>
+        <span id="waitingLabel" style="font-size:.75rem;color:var(--muted)">Waiting for players…</span>
+      </div>
+      <div class="players-lobby" id="lobbyPlayers"></div>
+    </div>
+    <div id="hostLobbyControls" style="display:none">
+      <button class="btn primary lg" id="startGameBtn" disabled>Start Game (need 2+ players)</button>
+    </div>
+    <div id="playerLobbyMsg" style="text-align:center;font-size:.85rem;color:var(--muted);display:none">
+      Waiting for host to start the game…
+      <div class="dots"><span>•</span><span>•</span><span>•</span></div>
+    </div>
+    <button class="btn ghost" id="leaveBtn">Leave Room</button>
+  </div>
+</div>
+
+<!-- ══ GAME ══ -->
+<div class="screen" id="s-game" style="justify-content:flex-start;padding-top:1rem">
+  <div class="game-wrap">
+    <div>
+      <div class="round-info"><span id="gRoundLbl">Round 1</span><span id="gRoundGame"></span></div>
+      <div class="progress-wrap"><div class="progress-bar" id="gProgressBar" style="width:0%"></div></div>
+    </div>
+    <!-- Scoreboard (collapsed) -->
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:.75rem;color:var(--muted)">Live Scores</span>
+      <button class="btn ghost" style="font-size:.75rem;padding:.2rem .5rem" id="toggleScores">Show ▼</button>
+    </div>
+    <div id="miniScores" style="display:none"></div>
+    <!-- Host controls bar -->
+    <div class="host-controls" id="hostBar" style="display:none">
+      <span class="host-label">🎙 You are the host</span>
+      <div style="display:flex;gap:.4rem;flex-wrap:wrap">
+        <button class="btn" style="font-size:.78rem" id="revealBtn">👁 Reveal Results</button>
+        <button class="btn primary" style="font-size:.78rem" id="nextRndBtn" disabled>Next Round →</button>
+      </div>
+    </div>
+    <div class="game-card" id="gameCard">
+      <div class="waiting">Loading game<div class="dots"><span>•</span><span>•</span><span>•</span></div></div>
+    </div>
+    <!-- Answer status -->
+    <div id="answerStatus" style="text-align:center;font-size:.8rem;color:var(--muted)"></div>
+  </div>
+</div>
+
+<!-- ══ RECAP ══ -->
+<div class="screen" id="s-recap">
+  <div class="card" style="max-width:440px">
+    <div style="font-size:1.4rem;font-weight:800;text-align:center;margin-bottom:1rem;background:linear-gradient(135deg,#b388ff,#ff4d8d);-webkit-background-clip:text;-webkit-text-fill-color:transparent">Game Over! 🏆</div>
+    <div class="trophy-row" id="trophyRow"></div>
+    <hr style="border:none;border-top:1px solid var(--border);margin:.5rem 0">
+    <div class="label" style="margin:.5rem 0">Final Scores</div>
+    <div id="finalScores"></div>
+    <button class="btn primary lg" style="margin-top:1rem" onclick="location.href='/multiplayer.html'">Play Again 🔄</button>
+    <button class="btn ghost lg" style="margin-top:.4rem" onclick="location.href='/'">← Home</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// CONFIG — Supabase public anon key (safe to expose)
+// ═══════════════════════════════════════════════════════
+var SUPABASE_URL = 'https://kswdhhulsqqhhykcievb.supabase.co';
+var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtzd2RoaHVsc3FxaGh5a2NpZXZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1NTYzNDgsImV4cCI6MjA5MTEzMjM0OH0.PNdiR3rNOpfdodlktOHt7-DOaBqz_d8r3XlDrXSxeQM';
+
+// ═══════════════════════════════════════════════════════
+// QUESTION DATA (same bank as main app)
+// ═══════════════════════════════════════════════════════
+var DATA={
+wyr:["Would you rather always have to speak in rhymes OR always have to sing everything you say?","Would you rather fly 3 feet off the ground OR teleport to places you've been?","Would you rather know when you're going to die OR how?","Would you rather have a pause button for life OR a rewind button?","Would you rather always say what you're thinking OR never speak again?","Would you rather live in a world with no music OR no movies?","Would you rather talk to animals OR speak every human language?","Would you rather always be 10 minutes late OR 2 hours early?","Would you rather have free first-class flights OR free five-star hotels?","Would you rather read minds (only boring thoughts) OR feel everyone's emotions?","Would you rather give up your phone for a month OR your bed?","Would you rather be stranded alone OR with someone you hate?","Would you rather have unlimited money but no friends OR great friends but broke?","Would you rather be very attractive but unintelligent OR very intelligent but unattractive?","Would you rather live in the past OR the future?","Would you rather lose all past memories OR never make new ones?","Would you rather stop time OR turn back time?","Would you rather always be overdressed OR underdressed?","Would you rather control fire OR water?","Would you rather have super strength OR super speed?","Would you rather fight one horse-sized duck OR 100 duck-sized horses?","Would you rather be invisible but mute OR visible but inaudible?","Would you rather travel the world a year with no money OR stay home with unlimited money?","Would you rather always whisper OR always shout?","Would you rather be the smartest in a room of average people OR the dumbest in a room of geniuses?","Would you rather have a job you love that pays poorly OR hate that pays incredibly well?","Would you rather be immortal watching everyone die OR live a normal happy lifespan?","Would you rather always feel too hot OR too cold?","Would you rather breathe underwater OR fly?","Would you rather know every language OR play every instrument?","Would you rather see in the dark OR hear from a mile away?","Would you rather go without coffee/tea forever OR alcohol forever?","Would you rather go back to age 10 with current knowledge OR skip 10 years forward?","Would you rather have everyone know your secrets OR know everyone else's?","Would you rather be the world's best singer OR best athlete?","Would you rather have a dragon OR be a dragon?","Would you rather only text and never call OR only call and never text?","Would you rather be an Olympic gold medalist OR a Nobel Prize winner?","Would you rather only eat spicy food OR only bland food?","Would you rather live in a huge city with no nature OR in nature with no city?","Would you rather find true love for 1 year OR never find it but live 100 happy years?","Would you rather give up Netflix forever OR YouTube forever?","Would you rather run 100mph OR swim 50mph?","Would you rather live in a treehouse OR an underwater house?","Would you rather never be bored OR never be stressed?","Would you rather have no fears OR no regrets?","Would you rather live in a musical OR a comedy show?","Would you rather forget how to read OR write?","Would you rather speak to the dead OR see into parallel universes?","Would you rather go viral for something amazing OR be privately successful?"],
+trivia:{Movies:["What film has the line 'You can't handle the truth!'?|A Few Good Men","Who directed Pulp Fiction?|Quentin Tarantino","In The Matrix what color pill does Neo take?|Red","Who played Iron Man in the MCU?|Robert Downey Jr.","Which movie won Best Picture at the 2020 Oscars?|Parasite","What is the highest-grossing film of all time?|Avatar","Who directed Inception?|Christopher Nolan","What 1975 Spielberg film had a great white shark?|Jaws","Which Pixar film is set in the Land of the Dead?|Coco","What film franchise features Jack Sparrow?|Pirates of the Caribbean","Who directed Titanic (1997)?|James Cameron","What animated film features Simba?|The Lion King","Which film is set aboard the Nostromo?|Alien","Who played T'Challa in Black Panther?|Chadwick Boseman","What film features 'Here's looking at you, kid'?|Casablanca"],Science:["What planet is the Red Planet?|Mars","What is the symbol for gold?|Au","How many bones in the adult body?|206","What gas do plants absorb?|Carbon dioxide","Who proposed general relativity?|Albert Einstein","What is the powerhouse of the cell?|Mitochondria","What element has atomic number 1?|Hydrogen","What is the boiling point of water?|100°C","What force keeps planets in orbit?|Gravity","Which blood type is the universal donor?|O negative","What is the hardest natural substance?|Diamond","How many planets in our solar system?|8","What organ pumps blood?|Heart","What gas is most of Earth's atmosphere?|Nitrogen","What is the study of fungi?|Mycology"],History:["When did World War II end?|1945","Who was the first US President?|George Washington","When did humans first land on the moon?|1969","Who wrote the Declaration of Independence?|Thomas Jefferson","What wall divided East and West Berlin?|Berlin Wall","What civilization built Machu Picchu?|Inca","When did the Titanic sink?|1912","Who was the first woman to win a Nobel Prize?|Marie Curie","What started World War I?|Assassination of Archduke Franz Ferdinand","What year did the French Revolution begin?|1789","What disease killed a third of Europe in the 14th century?|The Black Death","Who gave the 'I Have a Dream' speech?|Martin Luther King Jr.","What city was destroyed by Vesuvius?|Pompeii","When did apartheid officially end?|1994","Who was the first to circumnavigate the globe?|Ferdinand Magellan"],Sports:["How many players on a basketball team on court?|5","What sport is played at Wimbledon?|Tennis","Which country won the most FIFA World Cups?|Brazil","What sport uses a shuttlecock?|Badminton","Who has the most Olympic gold medals?|Michael Phelps","How long is a marathon?|42.195 km","What sport is LeBron James in?|Basketball","Which country invented the Olympics?|Greece","How many holes in golf?|18","In American football how many points is a touchdown?|6","What is Japan's national sport?|Sumo wrestling","How many players in soccer?|11","Who is 'The Greatest' in boxing?|Muhammad Ali","What sport uses a puck?|Ice hockey","What is 3 strikes in bowling called?|Turkey"],Geography:["Capital of Australia?|Canberra","Which country has the most lakes?|Canada","What is the longest river?|Nile","What is the tallest mountain?|Mount Everest","Smallest country in the world?|Vatican City","Which continent has the Sahara?|Africa","What is the largest ocean?|Pacific Ocean","Capital of Brazil?|Brasília","Deepest lake in the world?|Lake Baikal","Which country has most coastline?|Canada","Driest desert on Earth?|Atacama","Capital of Japan?|Tokyo","Country with the Great Barrier Reef?|Australia","Largest country by area?|Russia","Capital of Canada?|Ottawa"],Food:["Main ingredient in guacamole?|Avocado","Which country is sushi from?|Japan","What cheese is in a Greek salad?|Feta","What nut makes marzipan?|Almond","Which country invented pizza?|Italy","What grain is used in risotto?|Arborio rice","What is tahini made from?|Sesame seeds","Primary ingredient in hummus?|Chickpeas","Which nut is in Nutella?|Hazelnut","What herb is pesto made from?|Basil","What gives turmeric its color?|Curcumin","National dish of Spain?|Paella","What fruit is used to make wine?|Grapes","What makes sourdough different?|Wild yeast fermentation","Spicy Korean paste?|Gochujang"],Tech:["Who co-founded Apple?|Steve Jobs and Steve Wozniak","What does CPU stand for?|Central Processing Unit","Year of first iPhone?|2007","Which language is named after a snake?|Python","What does HTML stand for?|HyperText Markup Language","Which company owns Android?|Google","What does USB stand for?|Universal Serial Bus","Most visited website?|Google","What does AI stand for?|Artificial Intelligence","Who founded Microsoft?|Bill Gates and Paul Allen","What does RAM stand for?|Random Access Memory","Apple's operating system?|macOS","Most used language for data science?|Python","What does URL stand for?|Uniform Resource Locator","Who owns YouTube?|Google"]},
+nhie:["Never have I ever fallen asleep in a movie theater","Never have I ever cried at a cartoon","Never have I ever pretended not to see someone in public","Never have I ever sent a text to the wrong person","Never have I ever laughed so hard I cried","Never have I ever binge-watched an entire season in one day","Never have I ever re-gifted a present","Never have I ever eaten food that fell on the floor","Never have I ever waved back at someone not waving at me","Never have I ever stayed in pajamas all day","Never have I ever lied about reading a book","Never have I ever forgotten someone's name right after meeting them","Never have I ever missed a flight","Never have I ever gotten lost in a foreign country","Never have I ever traveled alone","Never have I ever lied on a resume","Never have I ever faked being sick","Never have I ever snuck into a place I wasn't supposed to be","Never have I ever had a crush on a friend","Never have I ever gone on a blind date","Never have I ever stayed friends with an ex","Never have I ever ghosted someone","Never have I ever been stood up","Never have I ever had a long distance relationship","Never have I ever told someone I loved them first","Never have I ever posted something I immediately regretted","Never have I ever gotten into an argument with a stranger online","Never have I ever cried at a party","Never have I ever gone skydiving","Never have I ever bungee jumped","Never have I ever skinny dipped","Never have I ever gotten a speeding ticket","Never have I ever snuck out at night","Never have I ever had feelings for two people at once","Never have I ever kissed someone who was just a friend","Never have I ever flirted to get something","Never have I ever said I love you without meaning it"],
+mlt:["Most likely to accidentally reply-all to a company email","Most likely to become a reality TV star","Most likely to still be awake at 4am for no reason","Most likely to start a business that takes off","Most likely to cry at a commercial","Most likely to move to another country on a whim","Most likely to forget their own birthday","Most likely to befriend a stranger on a plane","Most likely to go viral for something unplanned","Most likely to become a millionaire","Most likely to still be in pajamas at 3pm","Most likely to get lost in their own neighborhood","Most likely to know every word to every pop song","Most likely to accidentally start a trend","Most likely to write a bestselling book","Most likely to be the last to realize the plot twist","Most likely to travel the world solo","Most likely to have a pet with a human name","Most likely to overcomplicate a simple task","Most likely to end up on a cooking show","Most likely to win a dance battle they didn't sign up for","Most likely to have a motivational quote for everything","Most likely to forget why they walked into a room","Most likely to organize a spontaneous road trip","Most likely to carry snacks everywhere","Most likely to send a risky text and regret it","Most likely to have 15 tabs open at all times","Most likely to apologize for things that weren't their fault","Most likely to hype everyone up constantly","Most likely to make a spreadsheet for a weekend trip"]
+};
+
+var AC=['#7c4dff','#ff4d8d','#00e5cc','#ffb300','#00e676','#ff7043','#29b6f6','#ab47bc'];
+function acol(i){return AC[i%AC.length];}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+// ═══════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════
+var ME={id:'p_'+Math.random().toString(36).slice(2),name:'',color:acol(Math.floor(Math.random()*AC.length))};
+var ROOM={code:'',isHost:false,totalRounds:15,enabledGames:['wyr','nhie','trivia','mlt']};
+var GAME={round:0,game:'',question:{},showResults:false,myAnswer:'',answered:false,timerInterval:null,timerLeft:0,sequence:[]};
+var PLAYERS=[];
+var realtimeChannel=null;
+var heartbeatInterval=null;
+var rounds=15;
+
+// ═══════════════════════════════════════════════════════
+// SCREEN NAV
+// ═══════════════════════════════════════════════════════
+function show(id){document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});document.getElementById(id).classList.add('active');}
+function loading(on,msg){var el=document.getElementById('loadingOverlay');el.classList.toggle('show',on);if(msg)document.getElementById('loadingText').textContent=msg;}
+function toast(msg,dur){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},dur||2500);}
+
+// ═══════════════════════════════════════════════════════
+// HOME
+// ═══════════════════════════════════════════════════════
+document.getElementById('hostBtn').addEventListener('click',function(){
+  var name=document.getElementById('myName').value.trim();
+  if(!name){toast('Enter your name first!');return;}
+  ME.name=name;show('s-setup');
+});
+document.getElementById('joinBtn').addEventListener('click',async function(){
+  var name=document.getElementById('myName').value.trim();
+  var code=document.getElementById('joinCode').value.trim().toUpperCase();
+  if(!name){toast('Enter your name first!');return;}
+  if(code.length!==6){toast('Enter a 6-digit room code!');return;}
+  ME.name=name;
+  await joinRoom(code);
+});
+document.getElementById('myName').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('joinBtn').click();});
+
+// ═══════════════════════════════════════════════════════
+// SETUP
+// ═══════════════════════════════════════════════════════
+document.getElementById('rDown').addEventListener('click',function(){if(rounds>5){rounds-=5;document.getElementById('rVal').textContent=rounds;}});
+document.getElementById('rUp').addEventListener('click',function(){if(rounds<30){rounds+=5;document.getElementById('rVal').textContent=rounds;}});
+document.querySelectorAll('.game-toggle').forEach(function(b){
+  b.style.cssText='padding:.3rem .7rem;border:1px solid var(--border);background:var(--accent);color:#fff;border-radius:8px;font-size:.78rem;cursor:pointer;transition:all .15s;';
+  b.addEventListener('click',function(){
+    var active=b.classList.toggle('active2');
+    b.style.background=b.classList.contains('active2')||b.classList.contains('active')?'var(--bg3)':'var(--accent)';
+    b.style.color=b.classList.contains('active2')||!b.classList.contains('active')?'var(--muted)':'#fff';
+  });
+});
+document.getElementById('setupBackBtn').addEventListener('click',function(){show('s-home');});
+document.getElementById('createRoomBtn').addEventListener('click',async function(){
+  ROOM.totalRounds=rounds;
+  await createRoom();
+});
+
+// ═══════════════════════════════════════════════════════
+// LOBBY
+// ═══════════════════════════════════════════════════════
+function copyCode(){
+  navigator.clipboard&&navigator.clipboard.writeText(ROOM.code);toast('Room code copied! '+ROOM.code);
+}
+document.getElementById('startGameBtn').addEventListener('click',async function(){
+  if(PLAYERS.length<2){toast('Need at least 2 players!');return;}
+  loading(true,'Starting game…');
+  await proxy('start_game',{code:ROOM.code});
+  loading(false);
+});
+document.getElementById('leaveBtn').addEventListener('click',function(){location.href='/multiplayer.html';});
+
+// ═══════════════════════════════════════════════════════
+// GAME CONTROLS
+// ═══════════════════════════════════════════════════════
+var scoresVisible=false;
+document.getElementById('toggleScores').addEventListener('click',function(){
+  scoresVisible=!scoresVisible;
+  document.getElementById('miniScores').style.display=scoresVisible?'block':'none';
+  this.textContent=scoresVisible?'Hide ▲':'Show ▼';
+  if(scoresVisible)renderMiniScores();
+});
+document.getElementById('revealBtn').addEventListener('click',async function(){
+  await proxy('reveal_results',{code:ROOM.code});
+});
+document.getElementById('nextRndBtn').addEventListener('click',async function(){
+  if(GAME.round>=ROOM.totalRounds){await endGame();return;}
+  await pushNextRound();
+});
+
+// ═══════════════════════════════════════════════════════
+// SUPABASE PROXY
+// ═══════════════════════════════════════════════════════
+async function proxy(action,payload){
+  var res=await fetch('/.netlify/functions/supabase-proxy',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({action,payload})
+  });
+  if(!res.ok){var err=await res.json();throw new Error(err.error||'Request failed');}
+  return res.json();
+}
+
+// ═══════════════════════════════════════════════════════
+// SUPABASE REALTIME
+// ═══════════════════════════════════════════════════════
+function initRealtime(){
+  if(realtimeChannel)realtimeChannel.unsubscribe();
+  // Use Supabase JS client for realtime
+  var script=document.createElement('script');
+  script.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
+  script.onload=function(){
+    var client=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+    realtimeChannel=client.channel('room:'+ROOM.code)
+      .on('postgres_changes',{event:'UPDATE',schema:'public',table:'rooms',filter:'code=eq.'+ROOM.code},function(payload){
+        onRoomUpdate(payload.new);
+      })
+      .on('postgres_changes',{event:'INSERT',schema:'public',table:'players',filter:'room_code=eq.'+ROOM.code},function(payload){
+        onPlayerJoined(payload.new);
+      })
+      .on('postgres_changes',{event:'UPDATE',schema:'public',table:'players',filter:'room_code=eq.'+ROOM.code},function(){
+        refreshPlayers();
+      })
+      .on('postgres_changes',{event:'INSERT',schema:'public',table:'answers',filter:'room_code=eq.'+ROOM.code},function(){
+        refreshAnswerCount();
+      })
+      .subscribe();
+    // Heartbeat
+    heartbeatInterval=setInterval(function(){
+      proxy('heartbeat',{code:ROOM.code,playerId:ME.id});
+    },15000);
+  };
+  document.head.appendChild(script);
+}
+
+// ═══════════════════════════════════════════════════════
+// ROOM EVENTS
+// ═══════════════════════════════════════════════════════
+async function onRoomUpdate(room){
+  if(room.status==='playing'&&GAME.round===0&&room.current_round===0){
+    // Game just started
+    loading(false);show('s-game');
+    if(ROOM.isHost){
+      document.getElementById('hostBar').style.display='flex';
+      GAME.sequence=buildSequence();
+      await pushNextRound();
+    }
+    return;
+  }
+  if(room.status==='finished'){endGameLocal(await proxy('get_room',{code:ROOM.code,round:GAME.round}));return;}
+  if(room.current_round>0&&room.current_round!==GAME.round){
+    // New round pushed
+    GAME.round=room.current_round;
+    GAME.game=room.current_game;
+    GAME.question=room.current_question;
+    GAME.showResults=false;
+    GAME.myAnswer='';
+    GAME.answered=false;
+    clearInterval(GAME.timerInterval);
+    updateProgress();
+    renderGameRound();
+    return;
+  }
+  if(room.show_results&&!GAME.showResults){
+    GAME.showResults=true;
+    await showResults();
+    if(ROOM.isHost){document.getElementById('nextRndBtn').disabled=false;}
+    return;
+  }
+}
+async function onPlayerJoined(player){
+  await refreshPlayers();
+  if(document.getElementById('s-lobby').classList.contains('active')){
+    toast('👋 '+player.name+' joined!');
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// CREATE / JOIN
+// ═══════════════════════════════════════════════════════
+async function createRoom(){
+  loading(true,'Creating room…');
+  try{
+    var res=await proxy('create_room',{hostId:ME.id,hostName:ME.name,avatarColor:ME.color,totalRounds:ROOM.totalRounds});
+    ROOM.code=res.code;ROOM.isHost=true;
+    document.getElementById('lobbyCode').textContent=ROOM.code;
+    document.getElementById('hostLobbyControls').style.display='block';
+    initRealtime();
+    await refreshPlayers();
+    loading(false);show('s-lobby');
+  }catch(e){loading(false);toast('Error: '+e.message);}
+}
+async function joinRoom(code){
+  loading(true,'Joining room…');
+  try{
+    await proxy('join_room',{code,playerId:ME.id,name:ME.name,avatarColor:ME.color});
+    ROOM.code=code;ROOM.isHost=false;
+    document.getElementById('lobbyCode').textContent=code;
+    document.getElementById('playerLobbyMsg').style.display='block';
+    initRealtime();
+    await refreshPlayers();
+    loading(false);show('s-lobby');
+  }catch(e){loading(false);toast('Error: '+e.message);}
+}
+
+// ═══════════════════════════════════════════════════════
+// REFRESH
+// ═══════════════════════════════════════════════════════
+async function refreshPlayers(){
+  var res=await proxy('get_room',{code:ROOM.code,round:GAME.round});
+  PLAYERS=res.players||[];
+  renderLobbyPlayers();
+  if(ROOM.isHost){
+    var btn=document.getElementById('startGameBtn');
+    if(PLAYERS.length>=2){btn.disabled=false;btn.textContent='Start Game! ('+PLAYERS.length+' players) 🚀';}
+    else{btn.disabled=true;btn.textContent='Start Game (need 2+ players)';}
+  }
+  document.getElementById('playerCount').textContent='('+PLAYERS.length+')';
+  if(scoresVisible)renderMiniScores();
+}
+function renderLobbyPlayers(){
+  document.getElementById('lobbyPlayers').innerHTML=PLAYERS.map(function(p,i){
+    return '<div class="player-lobby-row">'
+      +'<div class="avatar" style="background:'+p.avatar_color+'">'+p.name.slice(0,1).toUpperCase()+'</div>'
+      +'<span style="font-size:.88rem;flex:1">'+esc(p.name)+'</span>'
+      +(p.is_host?'<span class="host-badge">HOST</span>':'')
+      +'<span class="online-dot" style="background:'+(p.is_online?'var(--green)':'var(--muted)')+'"></span>'
+      +'</div>';
+  }).join('');
+}
+async function refreshAnswerCount(){
+  var res=await proxy('get_room',{code:ROOM.code,round:GAME.round});
+  var answers=res.answers||[];var total=PLAYERS.length;var count=answers.length;
+  document.getElementById('answerStatus').textContent=count+' of '+total+' answered';
+  if(ROOM.isHost&&count>=total){document.getElementById('revealBtn').style.background='var(--accent)';document.getElementById('revealBtn').style.color='#fff';}
+}
+
+// ═══════════════════════════════════════════════════════
+// GAME SEQUENCE
+// ═══════════════════════════════════════════════════════
+var GPOOL=['wyr','nhie','trivia','mlt'];
+function buildSequence(){
+  var seq=[];
+  for(var i=0;i<ROOM.totalRounds;i++){
+    var g=GPOOL[i%GPOOL.length];
+    if(seq.length&&seq[seq.length-1]===g){var a=GPOOL.filter(function(x){return x!==g;});g=a[Math.floor(Math.random()*a.length)];}
+    seq.push(g);
+  }
+  return seq;
+}
+function pickRand(arr,used){
+  var avail=arr.filter(function(_,i){return used.indexOf(i)===-1;});
+  if(!avail.length){used.length=0;avail=arr;}
+  var idx=Math.floor(Math.random()*avail.length);used.push(arr.indexOf(avail[idx]));return avail[idx];
+}
+var usedQ={wyr:[],nhie:[],mlt:[]};var usedTrivia={};
+function buildQuestion(game){
+  if(game==='wyr'){var q=pickRand(DATA.wyr,usedQ.wyr);var p=q.split(' OR ');return{text:q,optA:p[0].replace(/^Would you rather /i,''),optB:p[1]||'',type:'wyr'};}
+  if(game==='nhie'){var s=pickRand(DATA.nhie,usedQ.nhie);return{text:s,type:'nhie'};}
+  if(game==='mlt'){var m=pickRand(DATA.mlt,usedQ.mlt);return{text:m,type:'mlt'};}
+  if(game==='trivia'){
+    var cats=Object.keys(DATA.trivia);var cat=cats[Math.floor(Math.random()*cats.length)];
+    if(!usedTrivia[cat])usedTrivia[cat]=[];
+    var raw=pickRand(DATA.trivia[cat],usedTrivia[cat]);var pts=raw.split('|');
+    return{text:pts[0],answer:pts[1]||'',category:cat,type:'trivia'};
+  }
+  return{text:'',type:game};
+}
+
+// ═══════════════════════════════════════════════════════
+// PUSH NEXT ROUND (HOST ONLY)
+// ═══════════════════════════════════════════════════════
+async function pushNextRound(){
+  var nextRound=GAME.round+1;
+  if(nextRound>ROOM.totalRounds){await endGame();return;}
+  var game=GAME.sequence[nextRound-1]||GPOOL[nextRound%GPOOL.length];
+  var question=buildQuestion(game);
+  document.getElementById('nextRndBtn').disabled=true;
+  document.getElementById('revealBtn').style.background='';document.getElementById('revealBtn').style.color='';
+  await proxy('push_question',{code:ROOM.code,round:nextRound,game,question});
+}
+async function endGame(){
+  await proxy('end_game',{code:ROOM.code});
+}
+
+// ═══════════════════════════════════════════════════════
+// UPDATE PROGRESS
+// ═══════════════════════════════════════════════════════
+function updateProgress(){
+  var pct=Math.round((GAME.round-1)/ROOM.totalRounds*100);
+  document.getElementById('gProgressBar').style.width=pct+'%';
+  document.getElementById('gRoundLbl').textContent='Round '+GAME.round+' of '+ROOM.totalRounds;
+  document.getElementById('gRoundGame').textContent={wyr:'🤔 WYR',nhie:'🙈 NHIE',trivia:'🧠 Trivia',mlt:'😂 MLT'}[GAME.game]||'';
+}
+
+// ═══════════════════════════════════════════════════════
+// RENDER GAME ROUND
+// ═══════════════════════════════════════════════════════
+function renderGameRound(){
+  var q=GAME.question;
+  document.getElementById('answerStatus').textContent='';
+  var fn={wyr:renderWYR,nhie:renderNHIE,trivia:renderTrivia,mlt:renderMLT}[GAME.game];
+  if(fn)fn(q);
+}
+
+// ── WYR ──────────────────────────────────────────────────
+function renderWYR(q){
+  document.getElementById('gameCard').innerHTML=
+    '<span class="game-badge" style="background:rgba(124,77,255,.2);color:#b388ff">🤔 Would You Rather</span>'
+    +'<div class="q-box"><span class="q-text">'+esc(q.text)+'</span></div>'
+    +'<div class="wyr-opts" id="wyrOpts">'
+    +'<button class="wyr-opt" id="wyrA"><strong>A)</strong> '+esc(q.optA||'')+'</button>'
+    +'<button class="wyr-opt" id="wyrB"><strong>B)</strong> '+esc(q.optB||'')+'</button>'
+    +'</div>'
+    +'<div id="wyrStatus" style="text-align:center;font-size:.78rem;color:var(--muted)">Pick your side — everyone is voting privately!</div>';
+  document.getElementById('wyrA').addEventListener('click',function(){submitWYR('A',q.optA||'');});
+  document.getElementById('wyrB').addEventListener('click',function(){submitWYR('B',q.optB||'');});
+}
+async function submitWYR(choice,label){
+  if(GAME.answered)return;GAME.answered=true;GAME.myAnswer=choice;
+  document.getElementById('wyr'+choice).classList.add('sel-'+choice.toLowerCase());
+  document.getElementById('wyr'+(choice==='A'?'B':'A')).disabled=true;
+  document.getElementById('wyrStatus').textContent='✅ Voted! Waiting for everyone else…';
+  await proxy('submit_answer',{code:ROOM.code,playerId:ME.id,playerName:ME.name,round:GAME.round,answer:choice,isCorrect:false});
+}
+
+// ── NHIE ─────────────────────────────────────────────────
+function renderNHIE(q){
+  var myPlayer=PLAYERS.find(function(p){return p.player_id===ME.id;});var lives=myPlayer?myPlayer.lives:3;
+  var heartsHtml='';for(var i=0;i<3;i++)heartsHtml+=(i<lives?'❤️':'🖤');
+  document.getElementById('gameCard').innerHTML=
+    '<span class="game-badge" style="background:rgba(255,77,141,.15);color:#ff4d8d">🙈 Never Have I Ever</span>'
+    +'<div class="q-box"><span class="q-text">'+esc(q.text)+'</span></div>'
+    +'<div style="text-align:center;font-size:.85rem;color:var(--muted);margin:.2rem 0">Your lives: '+heartsHtml+'</div>'
+    +'<div style="display:flex;gap:.6rem">'
+    +'<button class="life-btn has" id="nhieHas">✋ I HAVE done this</button>'
+    +'<button class="life-btn hasnt" id="nhieHasnt">🙅 I have NOT done this</button>'
+    +'</div>';
+  document.getElementById('nhieHas').addEventListener('click',function(){submitNHIE('has');});
+  document.getElementById('nhieHasnt').addEventListener('click',function(){submitNHIE('hasnt');});
+}
+async function submitNHIE(choice){
+  if(GAME.answered)return;GAME.answered=true;
+  document.getElementById('nhieHas').disabled=true;document.getElementById('nhieHasnt').disabled=true;
+  if(choice==='has'){
+    await proxy('lose_life',{code:ROOM.code,playerId:ME.id});
+    toast('You lost a life! ❤️');
+  }else{toast('Safe! 🎉');}
+  await proxy('submit_answer',{code:ROOM.code,playerId:ME.id,playerName:ME.name,round:GAME.round,answer:choice,isCorrect:false});
+  document.getElementById('nhieHas').parentElement.nextSibling&&(document.getElementById('nhieHas').parentElement.nextElementSibling.textContent='✅ Answered! Waiting for others…');
+  var statusEl=document.createElement('div');statusEl.style.cssText='text-align:center;font-size:.78rem;color:var(--muted);margin-top:.3rem';
+  statusEl.textContent='✅ Answered! Waiting for others…';
+  document.getElementById('gameCard').appendChild(statusEl);
+}
+
+// ── TRIVIA ────────────────────────────────────────────────
+function renderTrivia(q){
+  document.getElementById('gameCard').innerHTML=
+    '<span class="game-badge" style="background:rgba(0,229,204,.15);color:#00e5cc">🧠 Trivia — '+esc(q.category||'')+'</span>'
+    +'<div class="q-box"><span class="q-text">'+esc(q.text)+'</span></div>'
+    +'<div class="timer-wrap" id="triviaTimer"><div class="timer-num" id="tNum">30</div><div class="tbar-bg" style="max-width:300px;width:100%"><div class="tbar" id="tBar"></div></div></div>'
+    +'<div style="text-align:center;font-size:.8rem;color:var(--muted)">Shout your answer — host will mark who\'s correct!</div>'
+    +'<div id="triviaAnswered" style="display:none;text-align:center;padding:.5rem;background:var(--bg3);border-radius:10px;font-size:.85rem"></div>';
+  // Start timer
+  var total=30,left=30;
+  var bar=document.getElementById('tBar'),num=document.getElementById('tNum');
+  bar.style.width='100%';bar.style.background='var(--accent)';
+  clearInterval(GAME.timerInterval);
+  GAME.timerInterval=setInterval(function(){
+    left--;var pct=Math.round(left/total*100);bar.style.width=pct+'%';num.textContent=left;
+    if(left<=8){bar.style.background='var(--red)';num.classList.add('urgent');}
+    if(left<=0){clearInterval(GAME.timerInterval);document.getElementById('triviaTimer').style.display='none';}
+  },1000);
+}
+
+// ── MLT ───────────────────────────────────────────────────
+function renderMLT(q){
+  document.getElementById('gameCard').innerHTML=
+    '<span class="game-badge" style="background:rgba(255,179,0,.15);color:#ffb300">😂 Most Likely To</span>'
+    +'<div class="q-box"><span class="q-text">'+esc(q.text)+'</span></div>'
+    +'<div style="font-size:.8rem;color:var(--muted);text-align:center">Vote for one player:</div>'
+    +'<div class="vote-grid" id="mltGrid">'
+    +PLAYERS.map(function(p){return '<button class="vote-btn" data-pid="'+esc(p.player_id)+'" data-pname="'+esc(p.name)+'">'+esc(p.name)+'</button>';}).join('')
+    +'</div>'
+    +'<div id="mltStatus" style="text-align:center;font-size:.78rem;color:var(--muted)">Pick who you think this fits most!</div>';
+  document.querySelectorAll('.vote-btn[data-pid]').forEach(function(btn){
+    btn.addEventListener('click',function(){submitMLT(btn.dataset.pid,btn.dataset.pname);});
+  });
+}
+async function submitMLT(pid,pname){
+  if(GAME.answered)return;GAME.answered=true;
+  document.querySelectorAll('.vote-btn[data-pid]').forEach(function(b){b.disabled=true;if(b.dataset.pid===pid)b.classList.add('sel');});
+  document.getElementById('mltStatus').textContent='✅ Voted for '+pname+'! Waiting for others…';
+  await proxy('submit_answer',{code:ROOM.code,playerId:ME.id,playerName:ME.name,round:GAME.round,answer:pname,isCorrect:false});
+}
+
+// ═══════════════════════════════════════════════════════
+// SHOW RESULTS
+// ═══════════════════════════════════════════════════════
+async function showResults(){
+  clearInterval(GAME.timerInterval);
+  var res=await proxy('get_room',{code:ROOM.code,round:GAME.round});
+  var answers=res.answers||[];var players=res.players||[];PLAYERS=players;
+  var q=GAME.question;
+  if(GAME.game==='wyr')showWYRResults(answers,q);
+  else if(GAME.game==='nhie')showNHIEResults(answers,players);
+  else if(GAME.game==='trivia')showTriviaResults(answers,q,players);
+  else if(GAME.game==='mlt')showMLTResults(answers,players);
+  if(scoresVisible)renderMiniScores();
+}
+
+function showWYRResults(answers,q){
+  var aCount=answers.filter(function(a){return a.answer==='A';}).length;
+  var bCount=answers.filter(function(a){return a.answer==='B';}).length;
+  var total=answers.length||1;
+  var aNames=answers.filter(function(a){return a.answer==='A';}).map(function(a){return a.player_name;}).join(', ');
+  var bNames=answers.filter(function(a){return a.answer==='B';}).map(function(a){return a.player_name;}).join(', ');
+  var html='<div style="margin-top:.5rem">'
+    +'<div class="result-bar-row"><span class="rbar-label" style="color:var(--accent2)">A) '+esc((q.optA||'').slice(0,20))+'</span><div class="rbar-bg"><div class="rbar-fill" style="width:'+Math.round(aCount/total*100)+'%;background:var(--accent)"></div></div><span class="rbar-pct">'+aCount+'</span></div>'
+    +'<div class="result-bar-row"><span class="rbar-label" style="color:var(--pink)">B) '+esc((q.optB||'').slice(0,20))+'</span><div class="rbar-bg"><div class="rbar-fill" style="width:'+Math.round(bCount/total*100)+'%;background:var(--pink)"></div></div><span class="rbar-pct">'+bCount+'</span></div>'
+    +(aNames?'<div style="font-size:.73rem;color:var(--muted);margin-top:.3rem">A: '+esc(aNames)+'</div>':'')
+    +(bNames?'<div style="font-size:.73rem;color:var(--muted)">B: '+esc(bNames)+'</div>':'')
+    +'</div>';
+  document.getElementById('gameCard').insertAdjacentHTML('beforeend',html);
+  launchConfetti(aCount>=bCount?'#7c4dff':'#ff4d8d');
+}
+
+function showNHIEResults(answers,players){
+  var hasNames=answers.filter(function(a){return a.answer==='has';}).map(function(a){return a.player_name;});
+  var hasntNames=answers.filter(function(a){return a.answer==='hasnt';}).map(function(a){return a.player_name;});
+  var livesHtml='<div style="display:flex;flex-wrap:wrap;gap:.4rem;justify-content:center;margin-top:.5rem">';
+  players.forEach(function(p){var l=p.lives||0;var h='';for(var i=0;i<3;i++)h+=(i<l?'❤️':'🖤');livesHtml+='<div style="text-align:center;font-size:.75rem;color:var(--muted);background:var(--bg3);border-radius:8px;padding:.3rem .5rem"><div>'+h+'</div><div>'+esc(p.name)+'</div></div>';});
+  livesHtml+='</div>';
+  var html='<div style="margin-top:.5rem">'
+    +(hasNames.length?'<div style="font-size:.82rem;margin-bottom:.3rem">✋ <strong style="color:var(--pink)">Has done it:</strong> '+esc(hasNames.join(', '))+'</div>':'')
+    +(hasntNames.length?'<div style="font-size:.82rem;margin-bottom:.3rem">🙅 <strong style="color:var(--green)">Has NOT:</strong> '+esc(hasntNames.join(', '))+'</div>':'')
+    +livesHtml+'</div>';
+  document.getElementById('gameCard').insertAdjacentHTML('beforeend',html);
+}
+
+function showTriviaResults(answers,q,players){
+  // Host marks correct answers — show the answer and who answered
+  var html='<div style="margin-top:.4rem">'
+    +'<div style="background:var(--bg3);border-radius:10px;padding:.7rem;text-align:center;margin-bottom:.5rem"><div style="font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.2rem">Answer</div><div style="font-size:1.1rem;font-weight:700;color:var(--green)">'+esc(q.answer||'')+'</div></div>';
+  if(ROOM.isHost){
+    html+='<div style="font-size:.75rem;color:var(--muted);margin-bottom:.4rem">Mark who got it right (+3 pts):</div>'
+      +'<div style="display:flex;flex-wrap:wrap;gap:.35rem;justify-content:center">'
+      +players.map(function(p){return '<button class="btn" data-ap="'+esc(p.player_id)+'" data-apname="'+esc(p.name)+'" data-score="'+p.score+'">✅ '+esc(p.name)+'</button>';}).join('')
+      +'</div>';
+  }
+  html+='</div>';
+  document.getElementById('gameCard').insertAdjacentHTML('beforeend',html);
+  if(ROOM.isHost){
+    document.querySelectorAll('[data-ap]').forEach(function(btn){
+      btn.addEventListener('click',async function(){
+        if(btn.dataset.marked)return;btn.dataset.marked='1';
+        btn.style.background='var(--green)';btn.style.color='#000';btn.disabled=true;
+        var newScore=(parseInt(btn.dataset.score)||0)+3;
+        await proxy('update_score',{code:ROOM.code,playerId:btn.dataset.ap,score:newScore,lives:3});
+        await refreshPlayers();if(scoresVisible)renderMiniScores();
+        toast(btn.dataset.apname+' +3 points! 🎉');
+      });
+    });
+  }
+}
+
+function showMLTResults(answers,players){
+  var counts={};players.forEach(function(p){counts[p.name]=0;});
+  answers.forEach(function(a){if(counts[a.answer]!==undefined)counts[a.answer]++;else counts[a.answer]=1;});
+  var sorted=Object.entries(counts).sort(function(a,b){return b[1]-a[1];});
+  var total=Object.values(counts).reduce(function(a,b){return a+b;},0)||1;
+  var winner=sorted[0]?sorted[0][0]:'';
+  var bars=sorted.map(function(e){var pct=Math.round(e[1]/total*100);return '<div class="result-bar-row"><span class="rbar-label">'+esc(e[0])+'</span><div class="rbar-bg"><div class="rbar-fill" style="width:'+pct+'%;background:var(--amber)"></div></div><span class="rbar-pct">'+pct+'%</span></div>';}).join('');
+  var html='<div style="margin-top:.5rem;background:var(--bg3);border-radius:10px;padding:.8rem">'
+    +'<div style="text-align:center;font-weight:700;color:var(--amber);margin-bottom:.5rem">👑 '+esc(winner)+'</div>'
+    +bars+'</div>';
+  document.getElementById('gameCard').insertAdjacentHTML('beforeend',html);
+  // Award 2 pts to winner
+  if(ROOM.isHost&&winner){
+    var wp=players.find(function(p){return p.name===winner;});
+    if(wp){proxy('update_score',{code:ROOM.code,playerId:wp.player_id,score:(wp.score||0)+2,lives:wp.lives||3});}
+  }
+  launchConfetti('#ffb300');
+}
+
+// ═══════════════════════════════════════════════════════
+// MINI SCOREBOARD
+// ═══════════════════════════════════════════════════════
+function renderMiniScores(){
+  var sorted=[].concat(PLAYERS).sort(function(a,b){return b.score-a.score;});
+  document.getElementById('miniScores').innerHTML='<div class="scoreboard">'
+    +sorted.map(function(p,i){
+      var isMe=p.player_id===ME.id;
+      var lives='';for(var j=0;j<(p.lives||3);j++)lives+='❤️';
+      return '<div class="score-row'+(isMe?' me':'')+'">'
+        +'<span class="score-rank">'+(i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1))+'</span>'
+        +'<div class="avatar" style="background:'+p.avatar_color+';width:22px;height:22px;font-size:.6rem">'+p.name.slice(0,1).toUpperCase()+'</div>'
+        +'<span class="score-name'+(isMe?'" style="font-weight:700':'')+'">'+(isMe?'You ('+esc(p.name)+')':esc(p.name))+'</span>'
+        +'<span class="score-lives" style="font-size:.7rem">'+lives+'</span>'
+        +'<span class="score-pts">'+p.score+'</span>'
+        +'</div>';
+    }).join('')+'</div>';
+}
+
+// ═══════════════════════════════════════════════════════
+// END GAME
+// ═══════════════════════════════════════════════════════
+function endGameLocal(data){
+  clearInterval(GAME.timerInterval);clearInterval(heartbeatInterval);
+  if(realtimeChannel)realtimeChannel.unsubscribe();
+  show('s-recap');launchConfetti('#7c4dff');
+  var players=(data.players||[]).sort(function(a,b){return b.score-a.score;});
+  var trophies=[];
+  if(players[0])trophies.push({icon:'🏆',label:'Party Champion',name:players[0].name,detail:players[0].score+' points'});
+  if(players[1])trophies.push({icon:'🥈',label:'Runner Up',name:players[1].name,detail:players[1].score+' points'});
+  var nhieWinner=players.slice().sort(function(a,b){return b.lives-a.lives;})[0];
+  if(nhieWinner&&nhieWinner.lives>0)trophies.push({icon:'❤️',label:'NHIE Survivor',name:nhieWinner.name,detail:nhieWinner.lives+' lives left'});
+  if(players.length>2)trophies.push({icon:'🥄',label:'Wooden Spoon',name:players[players.length-1].name,detail:players[players.length-1].score+' pts'});
+  document.getElementById('trophyRow').innerHTML=trophies.map(function(t){return '<div class="trophy-item"><div class="trophy-icon">'+t.icon+'</div><div><div class="trophy-label">'+t.label+'</div><div class="trophy-name">'+esc(t.name)+'</div><div class="trophy-detail">'+t.detail+'</div></div></div>';}).join('');
+  var mx=players[0]?players[0].score:1;mx=mx||1;
+  document.getElementById('finalScores').innerHTML='<div class="scoreboard">'
+    +players.map(function(p,i){var pct=Math.round(p.score/mx*100);return '<div class="score-row'+(p.player_id===ME.id?' me':'')+'">'+'<span class="score-rank">'+(i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1))+'</span>'+'<div class="avatar" style="background:'+p.avatar_color+';width:22px;height:22px;font-size:.6rem">'+p.name.slice(0,1).toUpperCase()+'</div>'+'<span class="score-name">'+esc(p.name)+'</span>'+'<span class="score-pts">'+p.score+'</span>'+'</div>';}).join('')
+    +'</div>';
+}
+
+// ═══════════════════════════════════════════════════════
+// CONFETTI
+// ═══════════════════════════════════════════════════════
+var cfC=document.getElementById('cf'),cfCtx=cfC.getContext('2d'),particles=[];
+function launchConfetti(color){
+  cfC.width=window.innerWidth;cfC.height=window.innerHeight;
+  for(var i=0;i<100;i++)particles.push({x:Math.random()*cfC.width,y:-10,vx:(Math.random()-.5)*6,vy:Math.random()*4+2,c:[color,AC[Math.floor(Math.random()*AC.length)]][Math.floor(Math.random()*2)],w:Math.random()*10+4,h:Math.random()*5+3,r:Math.random()*Math.PI*2,vr:(Math.random()-.5)*.2,life:1});
+  cfAnim();
+}
+function cfAnim(){
+  cfCtx.clearRect(0,0,cfC.width,cfC.height);particles=particles.filter(function(p){return p.life>0;});
+  if(!particles.length)return;
+  particles.forEach(function(p){p.x+=p.vx;p.y+=p.vy;p.vy+=0.1;p.r+=p.vr;p.life-=0.013;cfCtx.save();cfCtx.translate(p.x,p.y);cfCtx.rotate(p.r);cfCtx.globalAlpha=p.life;cfCtx.fillStyle=p.c;cfCtx.fillRect(-p.w/2,-p.h/2,p.w,p.h);cfCtx.restore();});
+  requestAnimationFrame(cfAnim);
+}
+
+// Handle room code in URL /room/XXXXXX
+(function(){var m=location.pathname.match(/\/room\/([A-Z0-9]{6})/i);if(m){document.getElementById('joinCode').value=m[1].toUpperCase();}})();
+</script>
+</body>
+</html>
