@@ -462,7 +462,7 @@ async function createRoom(){
   loading(true,'Creating room…');
   try{
     var res=await proxy('create_room',{hostId:ME.id,hostName:ME.name,avatarColor:ME.color,totalRounds:ROOM.totalRounds});
-    ROOM.code=typeof res.code==='object'?res.code.generate_room_code||(res.code+''):res.code;
+    ROOM.code=res.code;
     ROOM.isHost=true;
     document.getElementById('lobbyCode').textContent=ROOM.code;
     document.getElementById('hostLobbyControls').style.display='block';
