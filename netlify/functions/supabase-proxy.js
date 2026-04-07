@@ -14,9 +14,9 @@ exports.handler = async function (event) {
 
       // ── Create a new room ──────────────────────────────
       case 'create_room': {
-        // Generate code
+        // Generate code via RPC
         const codeRes = await sb('POST', '/rpc/generate_room_code', {});
-        const code = codeRes;
+        const code = typeof codeRes === 'string' ? codeRes : (codeRes && codeRes.generate_room_code) ? codeRes.generate_room_code : Math.random().toString(36).slice(2,8).toUpperCase();
         // Insert room
         const room = await sb('POST', '/rooms', {
           code,
