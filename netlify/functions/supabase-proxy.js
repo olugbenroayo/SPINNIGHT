@@ -40,8 +40,9 @@ exports.handler = async function (event) {
       case 'join_room': {
         // Check room exists and is in lobby
         const rooms = await sb('GET', `/rooms?code=eq.${payload.code}&select=*`);
-        if (!rooms.length) throw new Error('Room not found');
-        if (rooms[0].status !== 'lobby') throw new Error('Game already started');
+        const roomsArr = Array.isArray(rooms) ? rooms : [];
+        if (!roomsArr.length) throw new Error('Room not found');
+        if (roomsArr[0].status !== 'lobby') throw new Error('Game already started');
         // Upsert player
         await sb('POST', '/players', {
           room_code: payload.code,
@@ -50,7 +51,7 @@ exports.handler = async function (event) {
           avatar_color: payload.avatarColor || '#ff4d8d',
           is_host: false,
         });
-        result = { room: rooms[0] };
+        result = { room: roomsArr[0] };
         break;
       }
 
@@ -109,9 +110,10 @@ exports.handler = async function (event) {
 
       // ── Update lives (NHIE) ────────────────────────────
       case 'lose_life': {
-        const pArr = await sb('GET', `/players?room_code=eq.${payload.code}&player_id=eq.${payload.playerId}&select=lives`);
-        if (pArr.length) {
-          const newLives = Math.max(0, (pArr[0].lives || 3) - 1);
+        const pArr2 = await sb('GET', `/players?room_code=eq.${payload.code}&player_id=eq.${payload.playerId}&select=lives`);
+        const pArr2Safe = Array.isArray(pArr2) ? pArr2 : [];
+        if (pArr2Safe.length) {
+          const newLives = Math.max(0, (pArr2Safe[0].lives || 3) - 1);
           await sb('PATCH', `/players?room_code=eq.${payload.code}&player_id=eq.${payload.playerId}`, { lives: newLives });
         }
         result = { ok: true };
@@ -123,7 +125,10 @@ exports.handler = async function (event) {
         const r = await sb('GET', `/rooms?code=eq.${payload.code}&select=*`);
         const p = await sb('GET', `/players?room_code=eq.${payload.code}&select=*&order=score.desc`);
         const a = await sb('GET', `/answers?room_code=eq.${payload.code}&round_number=eq.${payload.round || 0}&select=*`);
-        result = { room: r[0], players: p, answers: a };
+        const rArr = Array.isArray(r) ? r : [];
+        const pArr = Array.isArray(p) ? p : [];
+        const aArr = Array.isArray(a) ? a : [];
+        result = { room: rArr[0], players: pArr, answers: aArr };
         break;
       }
 
