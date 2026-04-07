@@ -1,5 +1,5 @@
 // Secure proxy — keeps Supabase service key off the client
-const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_URL = process.env.SUPABASE_URL || 'https://kswdhhulsqqhhykcievb.supabase.co';
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
 
 exports.handler = async function (event) {
